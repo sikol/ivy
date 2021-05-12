@@ -1,0 +1,1 @@
+#define TEST_CASE(__VA_ARGS__) void f() 

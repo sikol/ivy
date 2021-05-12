@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}"
+    },
+    {
+      "name": "x64",
+      "hidden": true,
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "msvc",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl",
+        "CMAKE_C_FLAGS": "/W4 /WX /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl",
+        "CMAKE_CXX_FLAGS": "/W4 /WX /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl /EHsc /permissive- /Zc:preprocessor /Zc:inline /Zc:externConstexpr /Zc:__cplusplus",
+        "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
+        "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
+        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD"
+      }
+    },
+    {
+      "name": "clang",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_C_FLAGS": "/W4 /WX /utf-8 /sdl",
+        "CMAKE_CXX_FLAGS": "/W4 /WX /utf-8 /sdl /EHsc /permissive- /Zc:inline /Zc:__cplusplus",
+        "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
+        "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
+        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD"
+      }
+    },
+    {
+      "name": "windows",
+      "hidden": true,
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [ "Windows" ]
+        }
+      }
+    },
+    {
+      "name": "debug",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "x64-windows-msvc-debug",
+      "inherits": [ "base", "x64", "windows", "msvc", "debug" ],
+    },
+    {
+      "name": "x64-windows-clang-debug",
+      "inherits": [ "base", "x64", "windows", "clang", "debug" ],
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "x64-windows-msvc-debug",
+      "configurePreset": "x64-windows-msvc-debug"
+    },
+    {
+      "name": "x64-windows-clang-debug",
+      "configurePreset": "x64-windows-clang-debug"
+    }
+  ]
+}
