@@ -82,7 +82,9 @@ namespace ivy {
         explicit operator bool() const;
 
         auto operator*() const noexcept -> T const &;
+        auto operator*() noexcept -> T &;
         auto operator->() const noexcept -> T const *;
+        auto operator->() noexcept -> T *;
 
         auto error() const noexcept -> Error const &;
     };
@@ -127,7 +129,21 @@ namespace ivy {
     }
 
     template <typename T, typename Error>
+    auto expected<T, Error>::operator*() noexcept -> T &
+    {
+        IVY_CHECK(_value.has_value(), "expected<>::operator*: no value");
+        return *_value;
+    }
+
+    template <typename T, typename Error>
     auto expected<T, Error>::operator->() const noexcept -> T const *
+    {
+        IVY_CHECK(_value.has_value(), "expected<>::operator->: no value");
+        return std::addressof(*_value);
+    }
+
+    template <typename T, typename Error>
+    auto expected<T, Error>::operator->() noexcept -> T *
     {
         IVY_CHECK(_value.has_value(), "expected<>::operator->: no value");
         return std::addressof(*_value);

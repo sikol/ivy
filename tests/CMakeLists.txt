@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.19)
 
-add_executable(test_ivy main.cxx test_string.cxx test_format.cxx test_config.cxx test_expected.cxx)
+add_executable(test_ivy main.cxx test_string.cxx test_format.cxx test_config.cxx test_expected.cxx test_error.cxx "test_uri.cxx" "test_lazy.cxx")
 target_link_libraries(test_ivy PRIVATE ivy Catch2::Catch2)
 
 add_test(NAME test_ivy COMMAND $<TARGET_FILE:test_ivy>)

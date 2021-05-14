@@ -12,7 +12,7 @@
 TEST_CASE("ivy:format:print to ostream", "[ivy][format][print]") {
     std::ostringstream strm;
 
-    ivy::print(strm, "{} + {} = {}", 1, 2, (1 + 2));
+    ivy::fprint(strm, "{} + {} = {}", 1, 2, (1 + 2));
     auto result = strm.str();
     REQUIRE(result == "1 + 2 = 3");
 }
