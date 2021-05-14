@@ -10,7 +10,7 @@
 #include <ivy/config/parse.hxx>
 #include <ivy/overload.hxx>
 #include <ivy/string/match.hxx>
-#include <ivy/string/strconv.hxx>
+#include <ivy/string/convert.hxx>
 #include <ivy/string/trim.hxx>
 #include <ivy/trace.hxx>
 
