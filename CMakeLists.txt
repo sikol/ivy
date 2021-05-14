@@ -20,7 +20,8 @@ target_compile_features(ivy PUBLIC cxx_std_20)
 target_sources(ivy PRIVATE 
     src/config.cxx
     src/uri.cxx
-    src/datum.cxx)
+    src/datum.cxx
+    src/log.cxx)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(ivy PUBLIC IVY_ENABLE_TRACING)
