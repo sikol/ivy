@@ -17,7 +17,7 @@
 namespace ivy {
 
     template <typename T>
-    inline auto strtoi(std::string_view v, int base = 10) noexcept
+    auto strtoi(std::string_view v, int base = 10) noexcept
         -> expected<T, std::error_code>
     {
         T i;
