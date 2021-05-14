@@ -35,8 +35,8 @@ namespace ivy::config {
 
     class token {
     private:
-        std::any _value;
         token_type _type;
+        std::any _value;
 
     public:
         explicit token(token_type type);

@@ -34,7 +34,7 @@ namespace ivy {
          */
         template <error_type Error>
         error(Error &&e)
-            : exception_ptr(std::make_shared<std::remove_cv<Error>::type>(
+            : exception_ptr(std::make_shared<std::remove_cv_t<Error>>(
                   std::forward<Error>(e)))
         {
         }

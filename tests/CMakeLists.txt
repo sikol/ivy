@@ -13,7 +13,8 @@ add_executable(test_ivy
     test_uri.cxx
     test_lazy.cxx
     test_datum.cxx
-    test_log.cxx)
+    test_log.cxx
+    test_base64.cxx)
 
 target_link_libraries(test_ivy PRIVATE ivy Catch2::Catch2)
 

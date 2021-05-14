@@ -156,6 +156,47 @@ namespace ivy {
         return *_error;
     }
 
+    template <typename Error>
+    class expected<void, Error> {
+        std::optional<Error> _error;
+
+    public:
+        expected() noexcept;
+
+        template <typename E>
+        expected(detail::unexpected<E> &&error) noexcept;
+
+        template <typename E>
+        expected(detail::unexpected<E> const &error);
+
+        explicit operator bool() const;
+
+        auto error() const noexcept -> Error const &;
+    };
+
+    template <typename Error>
+    expected<void, Error>::expected() noexcept = default;
+
+    template <typename Error>
+    template <typename E>
+    expected<void, Error>::expected(detail::unexpected<E> &&error) noexcept
+        : _error(std::move(error.error()))
+    {
+    }
+
+    template <typename Error>
+    template <typename E>
+    expected<void, Error>::expected(detail::unexpected<E> const &error)
+        : _error(error.error())
+    {
+    }
+
+    template <typename Error>
+    expected<void, Error>::operator bool() const
+    {
+        return !_error.has_value();
+    }
+
 } // namespace ivy
 
 #endif // IVY_EXPECTED_HXX_INCLUDED

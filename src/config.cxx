@@ -158,14 +158,14 @@ namespace ivy::config {
         auto const &ss = value.storage();
 
         return std::visit(
-            overload([](std::monostate) -> std::string { return "<empty>"; },
+            overload{[](std::monostate) -> std::string { return "<empty>"; },
                      [](bool b) -> std::string { return b ? "true" : "false"; },
                      [](std::string_view sv) -> std::string {
                          return std::string(sv.begin(), sv.end());
                      },
                      [](std::int64_t i) -> std::string {
                          return std::to_string(i);
-                     }),
+                     }},
             ss);
     }
 
