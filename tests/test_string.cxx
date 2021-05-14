@@ -11,6 +11,7 @@
 #include <ivy/string/join.hxx>
 #include <ivy/string/match.hxx>
 #include <ivy/string/trim.hxx>
+#include <ivy/string/split.hxx>
 
 TEST_CASE("ivy:string:join 1-element vector<string> with iterators",
           "[ivy][string][join]")
@@ -200,4 +201,72 @@ TEST_CASE("ivy:string:trim:triml: no whitespace", "[ivy][string][trim][triml]")
     auto test_string = "foo"sv;
     auto trimmed = ivy::triml(test_string);
     REQUIRE(trimmed == "foo");
+}
+
+TEST_CASE("ivy:string:split: simple string_view", "[ivy][string][split]") {
+    using namespace std::string_view_literals;
+
+    std::vector<std::string_view> bits;
+
+    auto test_1 = "foo$bar$baz"sv;
+    ivy::split(test_1, '$', std::back_inserter(bits));
+    REQUIRE(bits.size() == 3);
+    REQUIRE(bits[0] == "foo");
+    REQUIRE(bits[1] == "bar");
+    REQUIRE(bits[2] == "baz");
+}
+
+TEST_CASE("ivy:string:split: single element", "[ivy][string][split]")
+{
+    using namespace std::string_view_literals;
+
+    std::vector<std::string_view> bits;
+
+    auto test_1 = "foobar"sv;
+    ivy::split(test_1, '$', std::back_inserter(bits));
+    REQUIRE(bits.size() == 1);
+    REQUIRE(bits[0] == "foobar");
+}
+
+TEST_CASE("ivy:string:split: empty first token",
+          "[ivy][string][split]")
+{
+    using namespace std::string_view_literals;
+
+    std::vector<std::string_view> bits;
+
+    auto test_1 = "$foo$bar"sv;
+    ivy::split(test_1, '$', std::back_inserter(bits));
+    REQUIRE(bits.size() == 3);
+    REQUIRE(bits[0] == "");
+    REQUIRE(bits[1] == "foo");
+    REQUIRE(bits[2] == "bar");
+}
+
+TEST_CASE("ivy:string:split: empty last token", "[ivy][string][split]")
+{
+    using namespace std::string_view_literals;
+
+    std::vector<std::string_view> bits;
+
+    auto test_1 = "foo$bar$"sv;
+    ivy::split(test_1, '$', std::back_inserter(bits));
+    REQUIRE(bits.size() == 3);
+    REQUIRE(bits[0] == "foo");
+    REQUIRE(bits[1] == "bar");
+    REQUIRE(bits[2] == "");
+}
+
+TEST_CASE("ivy:string:split: simple string", "[ivy][string][split]")
+{
+    using namespace std::string_literals;
+
+    std::vector<std::string_view> bits;
+
+    auto test_1 = "foo$bar$baz"s;
+    ivy::split(test_1, '$', std::back_inserter(bits));
+    REQUIRE(bits.size() == 3);
+    REQUIRE(bits[0] == "foo");
+    REQUIRE(bits[1] == "bar");
+    REQUIRE(bits[2] == "baz");
 }
