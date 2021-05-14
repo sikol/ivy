@@ -339,39 +339,6 @@ TEST_CASE("uri invalid port", "[uri]")
     REQUIRE(uri.error() == ivy::net::make_uri_error(uri_errors::invalid_port));
 }
 
-TEST_CASE("dehex", "[uri]")
-{
-    using ivy::net::detail::dehex;
-
-    REQUIRE(dehex('0') == 0);
-    REQUIRE(dehex('1') == 1);
-    REQUIRE(dehex('2') == 2);
-    REQUIRE(dehex('3') == 3);
-    REQUIRE(dehex('4') == 4);
-    REQUIRE(dehex('5') == 5);
-    REQUIRE(dehex('6') == 6);
-    REQUIRE(dehex('7') == 7);
-    REQUIRE(dehex('8') == 8);
-    REQUIRE(dehex('9') == 9);
-    REQUIRE(dehex('A') == 10);
-    REQUIRE(dehex('B') == 11);
-    REQUIRE(dehex('C') == 12);
-    REQUIRE(dehex('D') == 13);
-    REQUIRE(dehex('E') == 14);
-    REQUIRE(dehex('F') == 15);
-    REQUIRE(dehex('a') == 10);
-    REQUIRE(dehex('b') == 11);
-    REQUIRE(dehex('c') == 12);
-    REQUIRE(dehex('d') == 13);
-    REQUIRE(dehex('e') == 14);
-    REQUIRE(dehex('f') == 15);
-    REQUIRE(dehex('g') == -1);
-    REQUIRE(dehex('@') == -1);
-    REQUIRE(dehex('`') == -1);
-    REQUIRE(dehex('/') == -1);
-    REQUIRE(dehex(':') == -1);
-}
-
 TEST_CASE("empty uri", "[uri]")
 {
     auto text = "";
