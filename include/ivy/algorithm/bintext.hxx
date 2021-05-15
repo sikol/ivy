@@ -10,6 +10,7 @@
 #include <iterator>
 #include <ranges>
 #include <system_error>
+#include <span>
 
 #include <ivy/expected.hxx>
 
@@ -141,7 +142,7 @@ namespace ivy {
     template <typename Encoding,
               std::ranges::contiguous_range Input,
               typename OutputIterator>
-    auto bintext_encode_block(Input const &input, OutputIterator output) -> void
+    auto bintext_encode_block(Input &&input, OutputIterator output) -> void
     {
         static_assert(sizeof(std::ranges::range_value_t<Input>) == 1);
 
@@ -176,7 +177,7 @@ namespace ivy {
                 input[n++] = static_cast<std::uint8_t>(*begin++);
             }
 
-            bintext_encode_block<Encoding>(std::span(input).subspan(0, n),
+            bintext_encode_block<Encoding>(std::span<std::uint8_t>(input).subspan(0, n),
                                            &output[0]);
             std::ranges::copy(output, out);
         }
@@ -257,7 +258,7 @@ namespace ivy {
 
             out = std::copy(&outbuf[0], &outbuf[0] + n, out);
             nbytes += n;
-            if (n < Encoding::plain_bytes)
+            if (static_cast<unsigned>(n) < Encoding::plain_bytes)
                 break;
         }
 

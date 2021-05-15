@@ -79,8 +79,19 @@
       }
     },
     {
+      "name": "release",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
       "name": "x64-windows-msvc-debug",
       "inherits": [ "base", "x64", "windows", "msvc", "debug" ]
+    },
+    {
+      "name": "x64-windows-msvc-release",
+      "inherits": [ "base", "x64", "windows", "msvc", "release" ]
     },
     {
       "name": "x64-windows-msvc-asan",
@@ -89,6 +100,10 @@
     {
       "name": "x64-windows-clang-debug",
       "inherits": [ "base", "x64", "windows", "clang", "debug" ]
+    },
+    {
+      "name": "x64-windows-clang-release",
+      "inherits": [ "base", "x64", "windows", "clang", "release" ]
     }
   ],
   "buildPresets": [
@@ -97,12 +112,20 @@
       "configurePreset": "x64-windows-msvc-debug"
     },
     {
+      "name": "x64-windows-msvc-release",
+      "configurePreset": "x64-windows-msvc-release"
+    },
+    {
       "name": "x64-windows-msvc-asan",
       "configurePreset": "x64-windows-msvc-asan"
     },
     {
       "name": "x64-windows-clang-debug",
       "configurePreset": "x64-windows-clang-debug"
+    },
+    {
+      "name": "x64-windows-clang-release",
+      "configurePreset": "x64-windows-clang-release"
     }
   ]
 }
