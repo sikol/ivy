@@ -136,27 +136,6 @@ namespace ivy {
             }
         };
 
-        template <typename T>
-        auto unb64(T c) -> int
-        {
-            if (c >= 'A' && c <= 'Z')
-                return c - 'A';
-            if (c >= 'a' && c <= 'z')
-                return (c - 'a') + 26;
-            if (c >= '0' && c <= '9')
-                return (c - '0') + 52;
-            if (c == '+')
-                return 53;
-            if (c == '/')
-                return 54;
-            return -1;
-        }
-
-        auto unb64(std::byte c) -> int
-        {
-            return unb64(static_cast<std::uint8_t>(c));
-        }
-
     } // namespace detail
 
     template <typename Encoding,
