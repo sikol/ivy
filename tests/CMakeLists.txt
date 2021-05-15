@@ -17,5 +17,6 @@ add_executable(test_ivy
     test_bintext.cxx)
 
 target_link_libraries(test_ivy PRIVATE ivy Catch2::Catch2)
+target_compile_definitions(test_ivy PRIVATE CATCH_CONFIG_NO_WINDOWS_SEH)
 
 add_test(NAME test_ivy COMMAND $<TARGET_FILE:test_ivy>)
