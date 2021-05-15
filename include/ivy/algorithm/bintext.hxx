@@ -255,7 +255,7 @@ namespace ivy {
                 return make_unexpected(
                     std::make_error_code(std::errc::invalid_argument));
 
-            std::copy(&outbuf[0], &outbuf[0] + n, out);
+            out = std::copy(&outbuf[0], &outbuf[0] + n, out);
             nbytes += n;
             if (n < Encoding::plain_bytes)
                 break;
@@ -274,7 +274,7 @@ namespace ivy {
     auto bintext_decode(Range const &r, OutputIterator it)
         -> expected<std::size_t, std::error_code>
     {
-        return bintext_decode<Encoding>(r.begin(), r.end(), it);
+        return bintext_decode<Encoding>(std::ranges::begin(r), std::ranges::end(r), it);
     }
 
     template <typename Encoding, std::ranges::contiguous_range Range>
@@ -284,7 +284,7 @@ namespace ivy {
         std::string ret;
 
         auto res = bintext_decode<Encoding>(
-            r.begin(), r.end(), std::back_inserter(ret));
+            std::ranges::begin(r), std::ranges::end(r), std::back_inserter(ret));
         if (res)
             return ret;
         return make_unexpected(res.error());
