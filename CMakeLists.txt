@@ -22,6 +22,15 @@ target_sources(ivy PRIVATE
     src/uri.cxx
     src/datum.cxx
     src/log.cxx)
+    
+if(WIN32)
+    target_sources(ivy PRIVATE 
+        src/win32/hash.cxx
+        src/win32/error.cxx 
+        src/win32/bcrypt.cxx)
+
+    target_link_libraries(ivy PUBLIC bcrypt)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(ivy PUBLIC IVY_ENABLE_TRACING)

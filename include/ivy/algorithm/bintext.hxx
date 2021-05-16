@@ -59,7 +59,7 @@ namespace ivy {
         }
     };
 
-    struct hexchars {
+    struct hexchars_uc {
         static constexpr unsigned plain_bytes = 1;
         static constexpr unsigned encoded_bytes = 2;
         static constexpr unsigned bits_per_char = 4;
@@ -73,6 +73,24 @@ namespace ivy {
                 return (c - '0');
             if (c >= 'A' && c <= 'F')
                 return (c - 'A') + 10;
+            return -1;
+        }
+    };
+
+    struct hexchars_lc {
+        static constexpr unsigned plain_bytes = 1;
+        static constexpr unsigned encoded_bytes = 2;
+        static constexpr unsigned bits_per_char = 4;
+
+        static constexpr char table[] = "0123456789abcdef";
+        static constexpr char pad = '=';
+
+        static auto char_to_value(std::uint32_t c) -> int
+        {
+            if (c >= '0' && c <= '9')
+                return (c - '0');
+            if (c >= 'a' && c <= 'f')
+                return (c - 'a') + 10;
             return -1;
         }
     };

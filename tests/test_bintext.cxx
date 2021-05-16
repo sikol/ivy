@@ -88,7 +88,7 @@ TEST_CASE("ivy:bintext_encode: base32", "[ivy][bintext][base32]")
     }
 }
 
-TEST_CASE("ivy:bintext_encode: base16", "[ivy][bintext][base16]")
+TEST_CASE("ivy:bintext_encode: hexchars_uc", "[ivy][bintext][hexchars_uc]")
 {
     std::vector<std::tuple<std::string, std::string>> test_vectors{
         std::make_tuple("", ""),
@@ -101,12 +101,36 @@ TEST_CASE("ivy:bintext_encode: base16", "[ivy][bintext][base16]")
     };
 
     for (auto const &[string, expected] : test_vectors) {
-        auto b = ivy::bintext_encode_to_string<ivy::hexchars>(string);
+        auto b = ivy::bintext_encode_to_string<ivy::hexchars_uc>(string);
         INFO(string);
         INFO(expected);
         REQUIRE(b == expected);
 
-        auto p = ivy::bintext_decode_to_string<ivy::hexchars>(expected);
+        auto p = ivy::bintext_decode_to_string<ivy::hexchars_uc>(expected);
+        REQUIRE(p);
+        REQUIRE(*p == string);
+    }
+}
+
+TEST_CASE("ivy:bintext_encode: hexchars_lc", "[ivy][bintext][hexchars_lc]")
+{
+    std::vector<std::tuple<std::string, std::string>> test_vectors{
+        std::make_tuple("", ""),
+        std::make_tuple("f", "66"),
+        std::make_tuple("fo", "666f"),
+        std::make_tuple("foo", "666f6f"),
+        std::make_tuple("foob", "666f6f62"),
+        std::make_tuple("fooba", "666f6f6261"),
+        std::make_tuple("foobar", "666f6f626172"),
+    };
+
+    for (auto const &[string, expected] : test_vectors) {
+        auto b = ivy::bintext_encode_to_string<ivy::hexchars_lc>(string);
+        INFO(string);
+        INFO(expected);
+        REQUIRE(b == expected);
+
+        auto p = ivy::bintext_decode_to_string<ivy::hexchars_lc>(expected);
         REQUIRE(p);
         REQUIRE(*p == string);
     }

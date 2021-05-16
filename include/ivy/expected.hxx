@@ -7,11 +7,11 @@
 #define IVY_EXPECTED_HXX_INCLUDED
 
 #include <optional>
-#include <utility>
 #include <type_traits>
+#include <utility>
 
-#include <ivy/trace.hxx>
 #include <ivy/check.hxx>
+#include <ivy/trace.hxx>
 #include <ivy/unexpected.hxx>
 
 namespace ivy {
@@ -56,9 +56,11 @@ namespace ivy {
     } // namespace detail
 
     template <typename Error>
-    auto make_unexpected(Error &&e) -> detail::unexpected<std::remove_cvref_t<Error>>
+    auto make_unexpected(Error &&e)
+        -> detail::unexpected<std::remove_cvref_t<Error>>
     {
-        return detail::unexpected<std::remove_cvref_t<Error>>(std::forward<Error>(e));
+        return detail::unexpected<std::remove_cvref_t<Error>>(
+            std::forward<Error>(e));
     }
 
     template <typename T, typename Error>
@@ -67,16 +69,16 @@ namespace ivy {
         std::optional<Error> _error;
 
     public:
-        template<typename V>
+        template <typename V>
         expected(V &&value) noexcept;
 
-        template<typename V>
+        template <typename V>
         expected(V const &value);
 
-        template<typename E>
+        template <typename E>
         expected(detail::unexpected<E> &&error) noexcept;
 
-        template<typename E>
+        template <typename E>
         expected(detail::unexpected<E> const &error);
 
         explicit operator bool() const;
@@ -89,20 +91,20 @@ namespace ivy {
         auto error() const noexcept -> Error const &;
     };
 
-    template<typename T, typename Error>
-    template<typename V>
+    template <typename T, typename Error>
+    template <typename V>
     expected<T, Error>::expected(V &&value) noexcept : _value(std::move(value))
     {
     }
 
-    template<typename T, typename Error>
-    template<typename V>
+    template <typename T, typename Error>
+    template <typename V>
     expected<T, Error>::expected(V const &value) : _value(value)
     {
     }
 
-    template<typename T, typename Error>
-    template<typename E>
+    template <typename T, typename Error>
+    template <typename E>
     expected<T, Error>::expected(detail::unexpected<E> &&error) noexcept
         : _error(std::move(error.error()))
     {
@@ -115,13 +117,13 @@ namespace ivy {
     {
     }
 
-    template<typename T, typename Error>
+    template <typename T, typename Error>
     expected<T, Error>::operator bool() const
     {
         return _value.has_value();
     }
 
-    template<typename T, typename Error>
+    template <typename T, typename Error>
     auto expected<T, Error>::operator*() const noexcept -> T const &
     {
         IVY_CHECK(_value.has_value(), "expected<>::operator*: no value");
@@ -195,6 +197,13 @@ namespace ivy {
     expected<void, Error>::operator bool() const
     {
         return !_error.has_value();
+    }
+
+    template <typename Error>
+    auto expected<void, Error>::error() const noexcept -> Error const &
+    {
+        IVY_CHECK(_error.has_value(), "expected<>::error(): no error");
+        return *_error;
     }
 
 } // namespace ivy
