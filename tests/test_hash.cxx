@@ -38,7 +38,7 @@ struct hmac_test_vector {
  * https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program/secure-hashing.
  */
 
-TEST_CASE("ivy:hash:sha1", "[ivy][hash][sha1]")
+TEST_CASE("ivy:hash:sha1", "[ivy][crypto][hash][sha1]")
 {
     using namespace std::string_view_literals;
 
@@ -234,7 +234,7 @@ TEST_CASE("ivy:hash:sha1", "[ivy][hash][sha1]")
     }
 }
 
-TEST_CASE("ivy:hash:sha224", "[ivy][hash][sha224]")
+TEST_CASE("ivy:hash:sha224", "[ivy][crypto][hash][sha224]")
 {
     using namespace std::string_view_literals;
 
@@ -464,7 +464,7 @@ TEST_CASE("ivy:hash:sha224", "[ivy][hash][sha224]")
     }
 }
 
-TEST_CASE("ivy:hash:sha256", "[ivy][hash][sha256]")
+TEST_CASE("ivy:hash:sha256", "[ivy][crypto][hash][sha256]")
 {
     using namespace std::string_view_literals;
 
@@ -693,7 +693,7 @@ TEST_CASE("ivy:hash:sha256", "[ivy][hash][sha256]")
     }
 }
 
-TEST_CASE("ivy:hash:sha384", "[ivy][hash][sha384]")
+TEST_CASE("ivy:hash:sha384", "[ivy][crypto][hash][sha384]")
 {
     using namespace std::string_view_literals;
 
@@ -1107,7 +1107,7 @@ TEST_CASE("ivy:hash:sha384", "[ivy][hash][sha384]")
     }
 }
 
-TEST_CASE("ivy:hash:sha512", "[ivy][hash][sha512]")
+TEST_CASE("ivy:hash:sha512", "[ivy][crypto][hash][sha512]")
 {
     using namespace std::string_view_literals;
 
@@ -1521,7 +1521,7 @@ TEST_CASE("ivy:hash:sha512", "[ivy][hash][sha512]")
     }
 }
 
-TEST_CASE("ivy:hash:md5", "[ivy][hash][md5]")
+TEST_CASE("ivy:hash:md5", "[ivy][crypto][hash][md5]")
 {
     using namespace std::string_view_literals;
 
@@ -1562,7 +1562,7 @@ TEST_CASE("ivy:hash:md5", "[ivy][hash][md5]")
     }
 }
 
-TEST_CASE("ivy:hash:md5_hmac", "[ivy][hash][hmac][md5]")
+TEST_CASE("ivy:hash:md5_hmac", "[ivy][crypto][hash][hmac][md5]")
 {
     using namespace std::string_view_literals;
 
@@ -1628,7 +1628,7 @@ TEST_CASE("ivy:hash:md5_hmac", "[ivy][hash][hmac][md5]")
     }
 }
 
-TEST_CASE("ivy:hash:sha1_hmac", "[ivy][hash][hmac][sha1]")
+TEST_CASE("ivy:hash:sha1_hmac", "[ivy][crypto][hash][hmac][sha1]")
 {
     using namespace std::string_view_literals;
 
@@ -1702,7 +1702,7 @@ TEST_CASE("ivy:hash:sha1_hmac", "[ivy][hash][hmac][sha1]")
     }
 }
 
-TEST_CASE("ivy:hash:sha256_hmac", "[ivy][hash][hmac][sha256]")
+TEST_CASE("ivy:hash:sha256_hmac", "[ivy][crypto][hash][hmac][sha256]")
 {
     using namespace std::string_view_literals;
 
@@ -2024,7 +2024,7 @@ TEST_CASE("ivy:hash:sha256_hmac", "[ivy][hash][hmac][sha256]")
     }
 }
 
-TEST_CASE("ivy:hash:sha384_hmac", "[ivy][hash][hmac][sha384]")
+TEST_CASE("ivy:hash:sha384_hmac", "[ivy][crypto][hash][hmac][sha384]")
 {
     using namespace std::string_view_literals;
 
@@ -2332,7 +2332,7 @@ TEST_CASE("ivy:hash:sha384_hmac", "[ivy][hash][hmac][sha384]")
     }
 }
 
-TEST_CASE("ivy:hash:sha512_hmac", "[ivy][hash][hmac][sha512]")
+TEST_CASE("ivy:hash:sha512_hmac", "[ivy][crypto][hash][hmac][sha512]")
 {
     using namespace std::string_view_literals;
 

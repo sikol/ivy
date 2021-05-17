@@ -4,6 +4,7 @@
  */
 
 #include <ivy/crypto/hash.hxx>
+#include <ivy/scope_guard.hxx>
 #include <ivy/win32/bcrypt.hxx>
 #include <ivy/win32/error.hxx>
 #include <ivy/win32/windows.hxx>
@@ -56,7 +57,63 @@ namespace ivy {
 
     } // namespace detail
 
-    auto hash_available(hash_algorithm algorithm) -> bool {
+    auto hash_pbkdf2(hash_algorithm algorithm,
+                     std::span<std::uint8_t const> password,
+                     std::span<std::uint8_t const> salt,
+                     std::uint64_t iterations,
+                     std::span<std::uint8_t> output)
+        -> expected<void, std::error_code>
+    {
+        auto bcrypt_id = detail::hash_algorithm_to_bcrypt_id(algorithm);
+        if (!bcrypt_id)
+            return make_unexpected(bcrypt_id.error());
+
+        BCRYPT_ALG_HANDLE algo_handle;
+
+        auto status = ::BCryptOpenAlgorithmProvider(
+            &algo_handle, *bcrypt_id, nullptr, BCRYPT_ALG_HANDLE_HMAC_FLAG);
+
+        if (status != STATUS_SUCCESS)
+            return make_unexpected(win32::make_nt_error(status));
+
+        scope_guard algo_guard(
+            [&]() { ::BCryptCloseAlgorithmProvider(algo_handle, 0); });
+
+        auto *pw_bytes = const_cast<UCHAR *>(password.data());
+        if (password.size() > std::numeric_limits<ULONG>::max())
+            return make_unexpected(
+                std::make_error_code(std::errc::value_too_large));
+        auto pw_size = static_cast<ULONG>(password.size());
+
+        auto *salt_bytes = const_cast<UCHAR *>(salt.data());
+        if (salt.size() > std::numeric_limits<ULONG>::max())
+            return make_unexpected(
+                std::make_error_code(std::errc::value_too_large));
+        auto salt_size = static_cast<ULONG>(salt.size());
+
+        auto *key_bytes = output.data();
+        if (output.size() > std::numeric_limits<ULONG>::max())
+            return make_unexpected(
+                std::make_error_code(std::errc::value_too_large));
+        auto key_size = static_cast<ULONG>(output.size());
+
+        status = ::BCryptDeriveKeyPBKDF2(algo_handle,
+                                         pw_bytes,
+                                         pw_size,
+                                         salt_bytes,
+                                         salt_size,
+                                         iterations,
+                                         key_bytes,
+                                         key_size,
+                                         0);
+        if (status != STATUS_SUCCESS)
+            return make_unexpected(win32::make_nt_error(status));
+
+        return {};
+    }
+
+    auto hash_available(hash_algorithm algorithm) -> bool
+    {
         auto bcrypt_algorithm = detail::hash_algorithm_to_bcrypt_id(algorithm);
         if (!bcrypt_algorithm)
             return false;
@@ -90,7 +147,8 @@ namespace ivy {
         return std::move(engine);
     }
 
-    auto hash_create_hmac(hash_algorithm algorithm, std::span<std::uint8_t const> secret)
+    auto hash_create_hmac(hash_algorithm algorithm,
+                          std::span<std::uint8_t const> secret)
         -> expected<hash_handle, std::error_code>
     {
         auto bcrypt_algo = detail::hash_algorithm_to_bcrypt_id(algorithm);
