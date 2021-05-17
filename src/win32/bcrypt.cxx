@@ -23,15 +23,21 @@ namespace ivy {
         return true;
     }
 
-    auto bcrypt_hash::make(LPCWSTR hash_name)
+    auto
+    bcrypt_hash::make(LPCWSTR hash_name,
+                      std::optional<std::span<std::uint8_t const>> hmac_secret)
         -> expected<bcrypt_hash, std::error_code>
     {
         bcrypt_hash hash;
 
         // Open the algorithm.
 
+        DWORD algorithm_flags = 0;
+        if (hmac_secret)
+            algorithm_flags |= BCRYPT_ALG_HANDLE_HMAC_FLAG;
+
         auto status = ::BCryptOpenAlgorithmProvider(
-            &hash.algorithm, hash_name, nullptr, 0);
+            &hash.algorithm, hash_name, nullptr, algorithm_flags);
 
         if (status != STATUS_SUCCESS)
             return make_unexpected(win32::make_nt_error(status));
@@ -59,12 +65,25 @@ namespace ivy {
                 std::make_error_code(std::errc::not_enough_memory));
 
         // Create the hash.
+
+        PUCHAR hmac_key{};
+        ULONG hmac_key_size{};
+        if (hmac_secret) {
+            hmac_key = const_cast<UCHAR *>(reinterpret_cast<UCHAR const *>(hmac_secret->data()));
+
+            if (hmac_secret->size() > std::numeric_limits<ULONG>::max())
+                return make_unexpected(
+                    std::make_error_code(std::errc::value_too_large));
+
+            hmac_key_size = static_cast<ULONG>(hmac_secret->size());
+        }
+
         status = ::BCryptCreateHash(hash.algorithm,
                                     &hash.hash,
                                     hash.hash_object.get(),
                                     hash_object_length,
-                                    nullptr,
-                                    0,
+                                    hmac_key,
+                                    hmac_key_size,
                                     0);
 
         if (status != STATUS_SUCCESS)

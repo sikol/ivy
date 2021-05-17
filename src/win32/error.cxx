@@ -55,7 +55,7 @@ namespace ivy::win32 {
 
         auto nt_errc_category::message(int c) const -> std::string
         {
-            return std::format("{:08x}", static_cast<unsigned long>(c));
+            return std::format("NTSTATUS({:08x})", static_cast<unsigned long>(c));
         }
 
     } // namespace detail

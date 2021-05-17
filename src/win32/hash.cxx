@@ -33,21 +33,20 @@ namespace ivy {
             -> expected<LPCWSTR, std::error_code>
         {
             switch (algorithm) {
+            case hash_algorithm::md5:
+                return BCRYPT_MD5_ALGORITHM;
+
             case hash_algorithm::sha1:
                 return BCRYPT_SHA1_ALGORITHM;
-                break;
 
             case hash_algorithm::sha256:
                 return BCRYPT_SHA256_ALGORITHM;
-                break;
 
             case hash_algorithm::sha384:
                 return BCRYPT_SHA384_ALGORITHM;
-                break;
 
             case hash_algorithm::sha512:
                 return BCRYPT_SHA512_ALGORITHM;
-                break;
 
             default:
                 return make_unexpected(
@@ -74,7 +73,6 @@ namespace ivy {
             return make_unexpected(bcrypt_algo.error());
 
         // Allocate the engine and handle.
-
         auto *engine_ = new (std::nothrow) detail::hash_engine;
         if (!engine_)
             return make_unexpected(
@@ -84,6 +82,32 @@ namespace ivy {
 
         // Create the hash.
         auto hash = bcrypt_hash::make(*bcrypt_algo);
+        if (!hash)
+            return make_unexpected(hash.error());
+
+        engine->hash = std::move(*hash);
+
+        return std::move(engine);
+    }
+
+    auto hash_create_hmac(hash_algorithm algorithm, std::span<std::uint8_t const> secret)
+        -> expected<hash_handle, std::error_code>
+    {
+        auto bcrypt_algo = detail::hash_algorithm_to_bcrypt_id(algorithm);
+
+        if (!bcrypt_algo)
+            return make_unexpected(bcrypt_algo.error());
+
+        // Allocate the engine and handle.
+        auto *engine_ = new (std::nothrow) detail::hash_engine;
+        if (!engine_)
+            return make_unexpected(
+                std::make_error_code(std::errc::not_enough_memory));
+
+        auto engine = hash_handle(engine_);
+
+        // Create the hash.
+        auto hash = bcrypt_hash::make(*bcrypt_algo, secret);
         if (!hash)
             return make_unexpected(hash.error());
 

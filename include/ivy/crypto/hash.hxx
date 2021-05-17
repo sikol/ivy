@@ -17,6 +17,7 @@
 namespace ivy {
 
     enum struct hash_algorithm : std::uint8_t {
+        md5,
         sha1,
         sha224,
         sha256,
@@ -26,6 +27,11 @@ namespace ivy {
 
     template <hash_algorithm algorithm>
     struct digest_length;
+
+    template <>
+    struct digest_length<hash_algorithm::md5> {
+        static constexpr std::size_t value = 16;
+    };
 
     template <>
     struct digest_length<hash_algorithm::sha1> {
@@ -72,9 +78,15 @@ namespace ivy {
         std::unique_ptr<detail::hash_engine, detail::hash_engine_deleter>;
 
     auto hash_available(hash_algorithm) -> bool;
+
     auto hash_create(hash_algorithm) -> expected<hash_handle, std::error_code>;
+
+    auto hash_create_hmac(hash_algorithm, std::span<std::uint8_t const> secret)
+        -> expected<hash_handle, std::error_code>;
+
     auto hash_update(hash_handle &, std::span<std::byte const> data)
         -> expected<void, std::error_code>;
+
     auto hash_finish(hash_handle &, std::span<std::byte> output)
         -> expected<std::size_t, std::error_code>;
 
@@ -171,6 +183,48 @@ namespace ivy {
 
         auto nbytes =
             hash_data(algorithm, std::forward<Range>(data), digest_buffer);
+        if (!nbytes)
+            return make_unexpected(nbytes.error());
+
+        auto digest = std::span(digest_buffer).subspan(0, *nbytes);
+
+        std::ranges::copy(digest, out);
+        return *nbytes;
+    }
+
+    template <std::ranges::contiguous_range Range>
+    auto hash_data_hmac(hash_algorithm algorithm,
+                    Range &&data,
+                        std::span<std::uint8_t const> key,
+                    std::span<std::byte> output) noexcept
+        -> expected<std::size_t, std::error_code>
+    {
+        auto hash = hash_create_hmac(algorithm, key);
+        if (!hash)
+            return make_unexpected(hash.error());
+
+        auto bytes = as_bytes(std::span(data));
+        if (auto ok = hash_update(*hash, bytes); !ok)
+            return make_unexpected(ok.error());
+
+        if (auto nbytes = hash_finish(*hash, output); !nbytes)
+            return make_unexpected(nbytes.error());
+        else
+            return *nbytes;
+    }
+
+    template <std::ranges::contiguous_range Range,
+              std::output_iterator<std::byte> OutputIterator>
+    auto hash_data_hmac(hash_algorithm algorithm,
+                   Range &&data,
+                        std::span<std::uint8_t const> key,
+                   OutputIterator out) noexcept
+        -> expected<std::size_t, std::error_code>
+    {
+        std::array<std::byte, max_digest_length> digest_buffer;
+
+        auto nbytes = hash_data_hmac(
+            algorithm, std::forward<Range>(data), key, digest_buffer);
         if (!nbytes)
             return make_unexpected(nbytes.error());
 

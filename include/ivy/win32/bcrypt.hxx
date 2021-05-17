@@ -39,8 +39,10 @@ namespace ivy {
         auto finish(std::span<std::byte> result) noexcept
             -> expected<std::size_t, std::error_code>;
 
-        static auto make(LPCWSTR algorithm_id)
+        static auto make(LPCWSTR algorithm_id, 
+            std::optional<std::span<std::uint8_t const>> hmac_secret = {})
             -> expected<bcrypt_hash, std::error_code>;
+
         static auto supported(LPCWSTR algorithm_id) -> bool;
     };
 
