@@ -50,14 +50,14 @@ namespace ivy::win32 {
 
     namespace detail {
 
-        struct win32_errc_category : std::error_category {
-            char const *name() const noexcept final;
-            std::string message(int c) const final;
+        struct win32_errc_category final : std::error_category {
+            auto name() const noexcept -> char const * final;
+            auto message(int c) const -> std::string final;
         };
 
-        struct nt_errc_category : std::error_category {
-            char const *name() const noexcept final;
-            std::string message(int c) const final;
+        struct nt_errc_category final : std::error_category {
+            auto name() const noexcept -> char const * final;
+            auto message(int c) const -> std::string final;
         };
 
     } // namespace detail

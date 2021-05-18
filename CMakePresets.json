@@ -54,8 +54,8 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang-cl",
         "CMAKE_CXX_COMPILER": "clang-cl",
-        "CMAKE_C_FLAGS": "/W4 /WX /utf-8 /sdl",
-        "CMAKE_CXX_FLAGS": "/W4 /WX /utf-8 /sdl /EHsc /permissive- /Zc:inline /Zc:__cplusplus",
+        "CMAKE_C_FLAGS": "-fdiagnostics-absolute-paths /W4 /WX /utf-8 /sdl",
+        "CMAKE_CXX_FLAGS": "-fdiagnostics-absolute-paths /W4 /WX /utf-8 /sdl /EHsc /permissive- /Zc:inline /Zc:__cplusplus",
         "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD",

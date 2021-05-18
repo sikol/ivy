@@ -21,7 +21,8 @@ target_sources(ivy PRIVATE
     src/config.cxx
     src/uri.cxx
     src/datum.cxx
-    src/log.cxx)
+    src/log.cxx
+    src/charenc.cxx)
     
 if(WIN32)
     target_sources(ivy PRIVATE 

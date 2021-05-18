@@ -5,7 +5,8 @@ cmake_minimum_required(VERSION 3.19)
 
 add_executable(test_ivy 
     main.cxx 
-    test_string.cxx 
+    test_string.cxx
+    test_string_algo.cxx
     test_format.cxx 
     test_config.cxx 
     test_expected.cxx 
@@ -16,7 +17,8 @@ add_executable(test_ivy
     test_log.cxx
     test_bintext.cxx
     test_hash.cxx
-    test_pbkdf2.cxx)
+    test_pbkdf2.cxx
+    test_charenc.cxx)
 
 target_link_libraries(test_ivy PRIVATE ivy Catch2::Catch2)
 target_compile_definitions(test_ivy PRIVATE CATCH_CONFIG_NO_WINDOWS_SEH)
