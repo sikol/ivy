@@ -15,7 +15,7 @@
 
 namespace ivy {
 
-    struct utf32 {
+    struct utf32_encoding {
         using char_type = char32_t;
 
         static auto length(char_type const *s) -> std::size_t

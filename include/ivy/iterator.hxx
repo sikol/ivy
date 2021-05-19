@@ -31,7 +31,7 @@ namespace ivy {
         }
 
         template <typename V>
-        auto operator=(V &&o) const noexcept -> void
+        auto operator=(V &&) const noexcept -> void
         {
         }
 

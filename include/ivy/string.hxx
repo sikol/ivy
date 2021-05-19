@@ -15,6 +15,11 @@
 #include <vector>
 
 #include <ivy/charenc.hxx>
+#include <ivy/charenc/system_wide.hxx>
+#include <ivy/charenc/utf16.hxx>
+#include <ivy/charenc/utf32.hxx>
+#include <ivy/charenc/utf8.hxx>
+
 #include <ivy/expected.hxx>
 
 namespace ivy {
@@ -86,9 +91,17 @@ namespace ivy {
         auto data() const noexcept -> const_pointer;
         auto c_str() const noexcept -> const_pointer;
 
+        auto substr(size_type begin, size_type len) const noexcept
+            -> basic_string;
+
         auto begin() const noexcept -> const_iterator;
         auto end() const noexcept -> const_iterator;
     };
+
+    using wstring = basic_string<system_wide_encoding>;
+    using u8string = basic_string<utf8_encoding>;
+    using u16string = basic_string<utf16_encoding>;
+    using u32string = basic_string<utf32_encoding>;
 
     template <character_encoding Encoding, typename Alloc>
     basic_string<Encoding, Alloc>::basic_string() = default;
@@ -192,6 +205,27 @@ namespace ivy {
             _rematerialize();
 
         return data();
+    }
+
+    template <character_encoding Encoding, typename Alloc>
+    auto basic_string<Encoding, Alloc>::substr(size_type begin,
+                                               size_type len) const noexcept
+        -> basic_string
+    {
+        auto ret(*this);
+
+        IVY_CHECK(_start + begin < size(),
+                  "ivy::basic_string::substr: start out of range");
+
+        if (begin >= size())
+            begin = size() - 1;
+        if (begin + len > size())
+            len = size() - begin;
+
+        ret._start += begin;
+        ret._len = len;
+
+        return ret;
     }
 
     template <character_encoding Encoding, typename Alloc>

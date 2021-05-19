@@ -28,7 +28,8 @@ if(WIN32)
     target_sources(ivy PRIVATE 
         src/win32/hash.cxx
         src/win32/error.cxx 
-        src/win32/bcrypt.cxx)
+        src/win32/bcrypt.cxx
+        src/win32/registry.cxx)
 
     target_link_libraries(ivy PUBLIC bcrypt)
 endif()

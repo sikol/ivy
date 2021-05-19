@@ -108,7 +108,7 @@ namespace ivy {
 
     } // namespace detail
 
-    struct utf16 {
+    struct utf16_encoding {
         using char_type = char16_t;
 
         static auto length(char_type const *s) -> std::size_t
@@ -125,10 +125,10 @@ namespace ivy {
         {
             detail::utf16_decoder decoder(out);
             for (char_type c : r) {
-                auto r = decoder.put(c);
+                auto ok = decoder.put(c);
 
-                if (!r)
-                    return make_unexpected(r.error());
+                if (!ok)
+                    return make_unexpected(ok.error());
             }
 
             if (!decoder.ok())
@@ -165,10 +165,10 @@ namespace ivy {
 
                 IVY_TRACE("utf16_decoder::to_char32(byte): c={:04x}", static_cast<unsigned>(c));
 
-                auto r = decoder.put(c);
+                auto ok = decoder.put(c);
 
-                if (!r)
-                    return make_unexpected(r.error());
+                if (!ok)
+                    return make_unexpected(ok.error());
             }
 
             if (!decoder.ok())

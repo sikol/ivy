@@ -8,125 +8,129 @@
 #include <catch2/catch.hpp>
 
 #include <ivy/algorithm/bintext.hxx>
-#include <ivy/string/u32string.hxx>
-#include <ivy/string/u16string.hxx>
-#include <ivy/string/u8string.hxx>
+#include <ivy/string.hxx>
 
 TEST_CASE("ivy:u8string", "[ivy][string][charenc][utf8]")
 {
     using namespace std::string_view_literals;
 
     struct test_vector {
-        std::u8string_view utf8_s;
+        std::string_view utf8_bytes;
         std::u32string_view utf32_s;
     };
 
     std::array test_vectors{
-        test_vector{u8"normal ASCII text"sv, U"normal ASCII text"sv},
-        test_vector{u8"\xCE\xBA\xE1\xBD\xB9\xCF\x83\xCE\xBC\xCE\xB5"sv,
+        test_vector{"normal ASCII text"sv, U"normal ASCII text"sv},
+        test_vector{"\xCE\xBA\xE1\xBD\xB9\xCF\x83\xCE\xBC\xCE\xB5"sv,
                     U"\u03BA\u1F79\u03C3\u03BC\u03B5"sv},
 
         // 2-byte characters
-        test_vector{u8"\u00A0"sv, U"\u00A0"sv},
-        test_vector{u8"\u00A0\u00A0"sv, U"\u00A0\u00A0"sv},
-        test_vector{u8"test \u00A0\u00A0test"sv, U"test \u00A0\u00A0test"sv},
-        test_vector{u8"test\u00A0test \u00A0"sv, U"test\u00A0test \u00A0"sv},
+        test_vector{"\xc2\xa0"sv, U"\u00A0"sv},
+        test_vector{"\xc2\xa0\xc2\xa0"sv, U"\u00A0\u00A0"sv},
+        test_vector{"test \xc2\xa0\xc2\xa0test"sv, U"test \u00A0\u00A0test"sv},
+        test_vector{"test\xc2\xa0test \xc2\xa0"sv, U"test\u00A0test \u00A0"sv},
 
         // 3-byte characters
-        test_vector{u8"\u0830"sv, U"\u0830"sv},
+        test_vector{"\xe0\xa0\xb0"sv, U"\u0830"sv},
 
         // 4-byte characters
-        test_vector{u8"\U00010080"sv, U"\U00010080"sv},
+        test_vector{"\xF0\x90\x82\x80"sv, U"\U00010080"sv},
 
         // Edge cases
-        test_vector{u8"\0"sv, U"\u0000"sv},
-        test_vector{u8"\x7f"sv, U"\u007f"sv},
-        test_vector{u8"\xc2\x80"sv, U"\u0080"sv},
-        test_vector{u8"\xdf\xbf"sv, U"\u07ff"sv},
-        test_vector{u8"\xe0\xa0\x80"sv, U"\u0800"sv},
-        test_vector{u8"\xef\xbf\xbf"sv, U"\uffff"sv},
-        test_vector{u8"\xf0\x90\x80\x80"sv, U"\U00010000"sv},
-        test_vector{u8"\xf4\x8f\xbf\xbf"sv, U"\U0010FFFF"sv},
-        test_vector{u8"\xed\x9f\xbf"sv, U"\U0000D7FF"sv},
-        test_vector{u8"\xee\x80\x80"sv, U"\U0000E000"sv},
-        test_vector{u8"\xef\xbf\xbd"sv, U"\U0000FFFD"sv},
+        test_vector{"\0"sv, U"\u0000"sv},
+        test_vector{"\x7f"sv, U"\u007f"sv},
+        test_vector{"\xc2\x80"sv, U"\u0080"sv},
+        test_vector{"\xdf\xbf"sv, U"\u07ff"sv},
+        test_vector{"\xe0\xa0\x80"sv, U"\u0800"sv},
+        test_vector{"\xef\xbf\xbf"sv, U"\uffff"sv},
+        test_vector{"\xf0\x90\x80\x80"sv, U"\U00010000"sv},
+        test_vector{"\xf4\x8f\xbf\xbf"sv, U"\U0010FFFF"sv},
+        test_vector{"\xed\x9f\xbf"sv, U"\U0000D7FF"sv},
+        test_vector{"\xee\x80\x80"sv, U"\U0000E000"sv},
+        test_vector{"\xef\xbf\xbd"sv, U"\U0000FFFD"sv},
     };
 
     for (auto &&vec : test_vectors) {
-        auto u8str = ivy::u8string(vec.utf8_s.data(), vec.utf8_s.size());
+        auto u8str = ivy::bytes_to_string<ivy::u8string>(
+            as_bytes(std::span(vec.utf8_bytes)));
+        REQUIRE(u8str);
+
         auto u32str = ivy::u32string(vec.utf32_s.data(), vec.utf32_s.size());
 
-        auto hexchars = ivy::bintext_encode_to_string<ivy::hexchars_lc>(u8str);
+        auto hexchars = ivy::bintext_encode_to_string<ivy::hexchars_lc>(*u8str);
         INFO(hexchars);
 
-        auto xcoded = ivy::transcode<ivy::u32string>(u8str);
+        auto xcoded = ivy::transcode<ivy::u32string>(*u8str);
         REQUIRE(xcoded);
         REQUIRE(*xcoded == u32str);
 
         auto recoded = ivy::transcode<ivy::u8string>(*xcoded);
         REQUIRE(recoded);
-        REQUIRE(*recoded == u8str);
+        REQUIRE(*recoded == *u8str);
     }
 
     std::array invalid_utf8_sequences{
         // Truncated string
-        u8"\xC2"sv,
+        "\xC2"sv,
 
         // Continuation byte with no start byte
-        u8"\x80x"sv,
-        u8"\x82x"sv,
-        u8"\xbfx"sv,
+        "\x80x"sv,
+        "\x82x"sv,
+        "\xbfx"sv,
 
         // Missing continuation byte
-        u8"\xC2x"sv,
-        u8"\xC0"sv,
-        u8"\xE0\x80"sv,
-        u8"\xF0\x80\x80"sv,
+        "\xC2x"sv,
+        "\xC0"sv,
+        "\xE0\x80"sv,
+        "\xF0\x80\x80"sv,
 
         // Invalid sequences
-        u8"\xfe"sv,
-        u8"\xff"sv,
-        u8"\xfe\xfe\xff\xff"sv,
+        "\xfe"sv,
+        "\xff"sv,
+        "\xfe\xfe\xff\xff"sv,
 
         // Invalid characters
-        u8"\xed\xa0\x80"sv,
-        u8"\xed\xad\xbf"sv,
-        u8"\xed\xae\x80"sv,
-        u8"\xed\xaf\xbf"sv,
-        u8"\xed\xb0\x80"sv,
-        u8"\xed\xbe\x80"sv,
-        u8"\xed\xbf\xbf"sv,
+        "\xed\xa0\x80"sv,
+        "\xed\xad\xbf"sv,
+        "\xed\xae\x80"sv,
+        "\xed\xaf\xbf"sv,
+        "\xed\xb0\x80"sv,
+        "\xed\xbe\x80"sv,
+        "\xed\xbf\xbf"sv,
 
         // UTF-16 surrogate pairs
-        u8"\xed\xa0\x80\xed\xb0\x80"sv,
-        u8"\xed\xa0\x80\xed\xbf\xbf"sv,
-        u8"\xed\xad\xbf\xed\xb0\x80"sv,
-        u8"\xed\xad\xbf\xed\xbf\xbf"sv,
-        u8"\xed\xae\x80\xed\xb0\x80"sv,
-        u8"\xed\xae\x80\xed\xbf\xbf"sv,
-        u8"\xed\xaf\xbf\xed\xb0\x80"sv,
-        u8"\xed\xaf\xbf\xed\xbf\xbf"sv,
+        "\xed\xa0\x80\xed\xb0\x80"sv,
+        "\xed\xa0\x80\xed\xbf\xbf"sv,
+        "\xed\xad\xbf\xed\xb0\x80"sv,
+        "\xed\xad\xbf\xed\xbf\xbf"sv,
+        "\xed\xae\x80\xed\xb0\x80"sv,
+        "\xed\xae\x80\xed\xbf\xbf"sv,
+        "\xed\xaf\xbf\xed\xb0\x80"sv,
+        "\xed\xaf\xbf\xed\xbf\xbf"sv,
 
         // Overlong encoding
-        u8"\xC0\x80\x20"sv,
-        u8"\xF0\x82\x82\xAC"sv,
-        u8"\xc0\xaf"sv,
-        u8"\xe0\x80\xaf"sv,
-        u8"\xf0\x80\x80\xaf"sv,
-        u8"\xf8\x80\x80\x80\xaf"sv,
-        u8"\xfc\x80\x80\x80\x80\xaf"sv,
-        u8"\xc0\x80"sv,
-        u8"\xe0\x80\x80"sv,
-        u8"\xf0\x80\x80\x80"sv,
-        u8"\xf8\x80\x80\x80\x80"sv,
-        u8"\xfc\x80\x80\x80\x80\x80"sv,
+        "\xC0\x80\x20"sv,
+        "\xF0\x82\x82\xAC"sv,
+        "\xc0\xaf"sv,
+        "\xe0\x80\xaf"sv,
+        "\xf0\x80\x80\xaf"sv,
+        "\xf8\x80\x80\x80\xaf"sv,
+        "\xfc\x80\x80\x80\x80\xaf"sv,
+        "\xc0\x80"sv,
+        "\xe0\x80\x80"sv,
+        "\xf0\x80\x80\x80"sv,
+        "\xf8\x80\x80\x80\x80"sv,
+        "\xfc\x80\x80\x80\x80\x80"sv,
     };
 
     for (auto &&data : invalid_utf8_sequences) {
         auto hexchars = ivy::bintext_encode_to_string<ivy::hexchars_lc>(data);
         INFO(hexchars);
 
-        auto r = ivy::utf8::validate(data);
+        std::vector<char8_t> chars(data.size());
+        std::memcpy(&chars[0], data.data(), data.size());
+
+        auto r = ivy::utf8_encoding::validate(chars);
         REQUIRE(!r);
 
         auto bytes = as_bytes(std::span(data));

@@ -6,13 +6,13 @@
 #ifndef IVY_CHARENC_UTF8_HXX_INCLUDED
 #define IVY_CHARENC_UTF8_HXX_INCLUDED
 
+#include <bit>
 #include <concepts>
 #include <cstddef>
 #include <iterator>
 #include <ranges>
 #include <string>
 #include <type_traits>
-#include <bit>
 
 #include <ivy/charenc/error.hxx>
 #include <ivy/expected.hxx>
@@ -25,7 +25,8 @@ namespace ivy {
 
         constexpr char8_t utf8_continuation_mask = char8_t(0b10000000u);
 
-        inline auto bit_slice(char32_t n, unsigned start, unsigned len) -> char32_t
+        inline auto bit_slice(char32_t n, unsigned start, unsigned len)
+            -> char32_t
         {
             return (n >> start) & ((1u << len) - 1);
         }
@@ -68,27 +69,35 @@ namespace ivy {
                     if ((v & i4b) == i4b) {
                         char_len = 4;
                         seen = 1;
-                        c32 |= static_cast<char32_t>(v & 0b0000'0111u) << 18u;
+                        c32 = static_cast<char32_t>(v & 0b0000'0111u) << 18u;
+                        IVY_TRACE("                 : 4-byte char c32={:032b}",
+                                  static_cast<unsigned>(c32));
                         return {};
                     }
 
                     if ((v & i3b) == i3b) {
                         char_len = 3;
                         seen = 1;
-                        c32 |= static_cast<char32_t>(v & 0b0000'1111u) << 12u;
+                        c32 = static_cast<char32_t>(v & 0b0000'1111u) << 12u;
+                        IVY_TRACE("                 : 3-byte char c32={:032b}",
+                                  static_cast<unsigned>(c32));
                         return {};
                     }
 
                     if ((v & i2b) == i2b) {
                         char_len = 2;
                         seen = 1;
-                        c32 |= static_cast<char32_t>(v & 0b0001'1111u) << 6u;
+                        c32 = static_cast<char32_t>(v & 0b0001'1111u) << 6u;
+                        IVY_TRACE("                 : 2-byte char c32={:032b}",
+                                  static_cast<unsigned>(c32));
                         return {};
                     }
 
                     if ((v & icont) == icont)
                         return make_unexpected(
                             make_error_code(charenc_errc::invalid_encoding));
+
+                    IVY_TRACE("                 : 1-byte character, emit");
 
                     *out++ = char32_t(v);
                     return {};
@@ -104,16 +113,24 @@ namespace ivy {
 
                 unsigned shift = (char_len - seen - 1) * 6;
                 ++seen;
-                IVY_TRACE("                 : shift={}", shift);
-                c32 |= static_cast<char32_t>(v & cmask) << shift;
+                auto cval = static_cast<char32_t>(v & cmask) << shift;
+                c32 |= cval;
+
+                IVY_TRACE("                 : shift={}, cval={:08b}",
+                          shift,
+                          static_cast<unsigned>(cval));
+                IVY_TRACE("                 :         now c32={:032b}",
+                          static_cast<unsigned>(c32));
 
                 if (seen == char_len) {
-                    IVY_TRACE("                 : check for overlong encoding: c32={:x}, max_for_len={}",
+                    IVY_TRACE("                 : check for overlong encoding: "
+                              "c32={:x}, max_for_len={}",
                               static_cast<unsigned>(c32),
                               static_cast<unsigned>(max_for_len[char_len - 1]));
 
                     // At end of the character
-                    if (c32 > max_for_len[char_len] || c32 <= max_for_len[char_len - 1]) {
+                    if (c32 > max_for_len[char_len] ||
+                        c32 <= max_for_len[char_len - 1]) {
                         IVY_TRACE(
                             "                 : fail: c32={:x}, max_for_len={}",
                             static_cast<unsigned>(c32),
@@ -131,7 +148,6 @@ namespace ivy {
                     *out++ = c32;
                     seen = 0;
                     char_len = 0;
-                    c32 = 0;
                 }
 
                 return {};
@@ -145,7 +161,7 @@ namespace ivy {
 
     } // namespace detail
 
-    struct utf8 {
+    struct utf8_encoding {
         using char_type = char8_t;
 
         static auto length(char_type const *s) -> std::size_t
@@ -164,10 +180,14 @@ namespace ivy {
 
             detail::utf8_decoder decoder(out);
             for (char_type c : r) {
-                auto r = decoder.put(c);
+                IVY_TRACE("utf8::to_char32: c={:08b} {:0x}",
+                          static_cast<unsigned>(c),
+                          static_cast<unsigned>(c));
 
-                if (!r)
-                    return make_unexpected(r.error());
+                auto ok = decoder.put(c);
+
+                if (!ok)
+                    return make_unexpected(ok.error());
             }
 
             if (!decoder.ok())
@@ -188,10 +208,10 @@ namespace ivy {
 
             detail::utf8_decoder decoder(out);
             for (std::byte b : r) {
-                auto r = decoder.put(std::to_integer<char8_t>(b));
+                auto ok = decoder.put(std::to_integer<char8_t>(b));
 
-                if (!r)
-                    return make_unexpected(r.error());
+                if (!ok)
+                    return make_unexpected(ok.error());
             }
 
             if (!decoder.ok())

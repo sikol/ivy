@@ -18,6 +18,7 @@ Checks: >
     -cppcoreguidelines-avoid-non-const-global-variables,
     -cppcoreguidelines-owning-memory,
     -cppcoreguidelines-avoid-magic-numbers,
+    -cppcoreguidelines-avoid-c-arrays,
   misc-*,
     -misc-non-private-member-variables-in-classes,
   modernize-*,

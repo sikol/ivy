@@ -28,11 +28,11 @@ namespace ivy {
         static auto char_to_value(std::uint32_t c) -> int
         {
             if (c >= 'A' && c <= 'Z')
-                return c - 'A';
+                return static_cast<int>(c) - 'A';
             if (c >= 'a' && c <= 'z')
-                return (c - 'a') + 26;
+                return (static_cast<int>(c) - 'a') + 26;
             if (c >= '0' && c <= '9')
-                return (c - '0') + 52;
+                return (static_cast<int>(c) - '0') + 52;
             if (c == '+')
                 return 62;
             if (c == '/')
@@ -52,9 +52,11 @@ namespace ivy {
         static auto char_to_value(std::uint32_t c) -> int
         {
             if (c >= 'A' && c <= 'Z')
-                return c - 'A';
+                return static_cast<int>(c) - 'A';
+
             if (c >= '2' && c <= '7')
-                return (c - '2') + 26;
+                return (static_cast<int>(c) - '2') + 26;
+
             return -1;
         }
     };
@@ -70,9 +72,11 @@ namespace ivy {
         static auto char_to_value(std::uint32_t c) -> int
         {
             if (c >= '0' && c <= '9')
-                return (c - '0');
+                return (static_cast<int>(c) - '0');
+
             if (c >= 'A' && c <= 'F')
-                return (c - 'A') + 10;
+                return (static_cast<int>(c) - 'A') + 10;
+
             return -1;
         }
     };
