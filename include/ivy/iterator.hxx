@@ -10,16 +10,14 @@
 
 namespace ivy {
 
-    template<typename T>
     class null_output_iterator final {
     public:
         using iterator_category = std::output_iterator_tag;
-        using value_type = T;
+        using value_type = void;
         using difference_type = std::ptrdiff_t;
-        using pointer = value_type *;
-        using reference = value_type &;
+        using pointer = void;
+        using reference = void;
 
-        using value_type = T;
         auto operator*() const noexcept -> null_output_iterator const &
         {
             return *this;
@@ -41,6 +39,47 @@ namespace ivy {
         }
 
         auto operator++(int) noexcept -> null_output_iterator &
+        {
+            return *this;
+        }
+    };
+
+    template <typename From,
+              typename To,
+              std::output_iterator<To> output_iterator>
+    class static_cast_iterator final {
+        output_iterator out;
+
+    public:
+        using iterator_category = std::output_iterator_tag;
+        using value_type = void;
+        using difference_type = std::ptrdiff_t;
+        using pointer = void;
+        using reference = void;
+
+        static_cast_iterator(output_iterator out_) : out(out) {}
+
+        auto operator*() const noexcept -> static_cast_iterator const &
+        {
+            return *this;
+        }
+
+        auto operator*() noexcept -> static_cast_iterator &
+        {
+            return *this;
+        }
+
+        auto operator=(From const &v) const noexcept -> void
+        {
+            *out++ = static_cast<To>(v);
+        }
+
+        auto operator++() noexcept -> static_cast_iterator &
+        {
+            return *this;
+        }
+
+        auto operator++(int) noexcept -> static_cast_iterator &
         {
             return *this;
         }

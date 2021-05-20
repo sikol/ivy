@@ -15,6 +15,9 @@
 #include <type_traits>
 
 #include <ivy/charenc/error.hxx>
+#include <ivy/charenc/utf32.hxx>
+
+#include <ivy/buffer/fixed_buffer.hxx>
 #include <ivy/expected.hxx>
 #include <ivy/iterator.hxx>
 #include <ivy/trace.hxx>
@@ -31,134 +34,6 @@ namespace ivy {
             return (n >> start) & ((1u << len) - 1);
         }
 
-        template <std::output_iterator<char32_t> OutputIterator>
-        struct utf8_decoder {
-            OutputIterator out;
-            char32_t c32 = 0;
-            unsigned char_len = 0;
-            unsigned seen = 0;
-
-            static constexpr char8_t i2b = 0b11000000u;
-            static constexpr char8_t i3b = 0b11100000u;
-            static constexpr char8_t i4b = 0b11110000u;
-            static constexpr char8_t icont = 0b10000000;
-            static constexpr char8_t cmask = 0b00111111;
-
-            static constexpr std::array<char32_t, 5> max_for_len = {
-                0,
-                0x7Fu,
-                0x7FFu,
-                0xFFFFu,
-                0x10FFFFu,
-            };
-
-            utf8_decoder(OutputIterator out_) : out(out_) {}
-
-            auto put(char8_t v) -> expected<void, std::error_code>
-            {
-                IVY_TRACE("utf8_decoder::put: v={:08b}, c32={:032b}, "
-                          "char_len={}, seen={}",
-                          static_cast<unsigned>(v),
-                          static_cast<unsigned>(c32),
-                          char_len,
-                          seen);
-
-                if (char_len == 0) {
-                    // Start of a new character.
-
-                    if ((v & i4b) == i4b) {
-                        char_len = 4;
-                        seen = 1;
-                        c32 = static_cast<char32_t>(v & 0b0000'0111u) << 18u;
-                        IVY_TRACE("                 : 4-byte char c32={:032b}",
-                                  static_cast<unsigned>(c32));
-                        return {};
-                    }
-
-                    if ((v & i3b) == i3b) {
-                        char_len = 3;
-                        seen = 1;
-                        c32 = static_cast<char32_t>(v & 0b0000'1111u) << 12u;
-                        IVY_TRACE("                 : 3-byte char c32={:032b}",
-                                  static_cast<unsigned>(c32));
-                        return {};
-                    }
-
-                    if ((v & i2b) == i2b) {
-                        char_len = 2;
-                        seen = 1;
-                        c32 = static_cast<char32_t>(v & 0b0001'1111u) << 6u;
-                        IVY_TRACE("                 : 2-byte char c32={:032b}",
-                                  static_cast<unsigned>(c32));
-                        return {};
-                    }
-
-                    if ((v & icont) == icont)
-                        return make_unexpected(
-                            make_error_code(charenc_errc::invalid_encoding));
-
-                    IVY_TRACE("                 : 1-byte character, emit");
-
-                    *out++ = char32_t(v);
-                    return {};
-                }
-
-                // Inside a character, should have a continuation.
-                if (((v & 0b1100'0000u) >> 6) != 0b10u) {
-                    IVY_TRACE("                 : fail: expected continuation");
-
-                    return make_unexpected(
-                        make_error_code(charenc_errc::invalid_encoding));
-                }
-
-                unsigned shift = (char_len - seen - 1) * 6;
-                ++seen;
-                auto cval = static_cast<char32_t>(v & cmask) << shift;
-                c32 |= cval;
-
-                IVY_TRACE("                 : shift={}, cval={:08b}",
-                          shift,
-                          static_cast<unsigned>(cval));
-                IVY_TRACE("                 :         now c32={:032b}",
-                          static_cast<unsigned>(c32));
-
-                if (seen == char_len) {
-                    IVY_TRACE("                 : check for overlong encoding: "
-                              "c32={:x}, max_for_len={}",
-                              static_cast<unsigned>(c32),
-                              static_cast<unsigned>(max_for_len[char_len - 1]));
-
-                    // At end of the character
-                    if (c32 > max_for_len[char_len] ||
-                        c32 <= max_for_len[char_len - 1]) {
-                        IVY_TRACE(
-                            "                 : fail: c32={:x}, max_for_len={}",
-                            static_cast<unsigned>(c32),
-                            static_cast<unsigned>(max_for_len[char_len - 1]));
-
-                        return make_unexpected(
-                            make_error_code(charenc_errc::invalid_encoding));
-                    }
-
-                    // Invalid surrogate characters
-                    if (c32 >= 0xD800u && c32 <= 0xDFFFu)
-                        return make_unexpected(
-                            make_error_code(charenc_errc::invalid_encoding));
-
-                    *out++ = c32;
-                    seen = 0;
-                    char_len = 0;
-                }
-
-                return {};
-            }
-
-            auto ok() const -> bool
-            {
-                return seen == 0 && char_len == 0;
-            }
-        };
-
     } // namespace detail
 
     struct utf8_encoding {
@@ -168,65 +43,103 @@ namespace ivy {
         {
             return std::char_traits<char_type>::length(s);
         }
+    };
 
-        // clang-format off
-        template<std::ranges::range Range, std::output_iterator<char32_t> OutputIterator>
-        static auto to_char32(Range &&r, OutputIterator out)
-            -> expected<void, std::error_code>
-            requires (std::same_as<char_type, std::ranges::range_value_t<Range>>)
-        // clang-format on
+    template <>
+    class charconv<utf8_encoding, utf32_encoding> {
+        char32_t c32 = 0;
+        int char_len = 0;
+        int seen = 0;
+
+    public:
+        charconv(charconv_options = {}) noexcept {}
+
+        template <std::ranges::input_range input_range,
+                  std::output_iterator<char32_t> output_iterator>
+        auto convert(input_range &&r, output_iterator out) -> void
         {
-            IVY_TRACE("utf8::to_char32: start");
+            static constexpr char8_t i2b = 0b11000000u;
+            static constexpr char8_t i3b = 0b11100000u;
+            static constexpr char8_t i4b = 0b11110000u;
+            static constexpr char8_t icont = 0b10000000;
+            static constexpr char8_t cmask = 0b00111111;
 
-            detail::utf8_decoder decoder(out);
-            for (char_type c : r) {
-                IVY_TRACE("utf8::to_char32: c={:08b} {:0x}",
-                          static_cast<unsigned>(c),
-                          static_cast<unsigned>(c));
+            static constexpr char32_t max_for_len[] = {
+                0,
+                0x7Fu,
+                0x7FFu,
+                0xFFFFu,
+                0x10FFFFu,
+            };
 
-                auto ok = decoder.put(c);
+            for (auto c : r) {
+                if (char_len == 0) {
+                    // Start of a new character.
 
-                if (!ok)
-                    return make_unexpected(ok.error());
+                    if ((c & i4b) == i4b) {
+                        char_len = 4;
+                        seen = 1;
+                        c32 = static_cast<char32_t>(c & 0b0000'0111u) << 18u;
+                    } else if ((c & i3b) == i3b) {
+                        char_len = 3;
+                        seen = 1;
+                        c32 = static_cast<char32_t>(c & 0b0000'1111u) << 12u;
+                    } else if ((c & i2b) == i2b) {
+                        char_len = 2;
+                        seen = 1;
+                        c32 = static_cast<char32_t>(c & 0b0001'1111u) << 6u;
+                    } else if ((c & icont) == icont) {
+                        throw encoding_error("invalid encoding");
+                    } else {
+                        *out++ = static_cast<char32_t>(c);
+                    }
+
+                    continue;
+                }
+
+                // Inside a character, should have a continuation.
+                if (((c & 0b1100'0000u) >> 6) != 0b10u)
+                    throw encoding_error("invalid encoding");
+
+                unsigned shift = (char_len - seen - 1) * 6;
+                ++seen;
+                auto cval = static_cast<char32_t>(c & cmask) << shift;
+                c32 |= cval;
+
+                if (seen == char_len) {
+                    // At end of the character
+                    if (c32 > max_for_len[char_len] ||
+                        c32 <= max_for_len[char_len - 1]) {
+                        throw encoding_error("invalid encoding");
+                    }
+
+                    // Invalid surrogate characters
+                    if (c32 >= 0xD800u && c32 <= 0xDFFFu)
+                        throw encoding_error("invalid encoding");
+
+                    seen = 0;
+                    char_len = 0;
+                    *out++ = c32;
+                }
             }
-
-            if (!decoder.ok())
-                return make_unexpected(
-                    make_error_code(charenc_errc::invalid_encoding));
-
-            return {};
         }
 
-        // clang-format off
-        template<std::ranges::range Range, std::output_iterator<char32_t> OutputIterator>
-        static auto to_char32(Range &&r, std::endian, OutputIterator out)
-            -> expected<void, std::error_code>
-            requires (std::same_as<std::byte, std::ranges::range_value_t<Range>>)
-        // clang-format on
+        template <std::output_iterator<char32_t> output_iterator>
+        auto flush(output_iterator) -> void
         {
-            IVY_TRACE("utf8::to_char32: start");
-
-            detail::utf8_decoder decoder(out);
-            for (std::byte b : r) {
-                auto ok = decoder.put(std::to_integer<char8_t>(b));
-
-                if (!ok)
-                    return make_unexpected(ok.error());
-            }
-
-            if (!decoder.ok())
-                return make_unexpected(
-                    make_error_code(charenc_errc::invalid_encoding));
-
-            return {};
+            if (seen)
+                throw encoding_error("invalid encoding");
         }
+    };
 
-        // clang-format off
-        template<std::ranges::range Range, std::output_iterator<char_type> OutputIterator>
-        static auto from_char32(Range &&r, OutputIterator out)
-            -> expected<void, std::error_code>
-            requires (std::same_as<char32_t, std::ranges::range_value_t<Range>>)
-        // clang-format on
+    template <>
+    class charconv<utf32_encoding, utf8_encoding> {
+    public:
+        charconv(charconv_options = {}) noexcept {}
+
+        template <std::ranges::input_range input_range,
+                  std::output_iterator<char8_t> output_iterator>
+        auto convert(input_range &&r, output_iterator out) -> void
         {
             static constexpr char32_t max1b = 0x7Fu;
             static constexpr char32_t max2b = 0x7FFu;
@@ -239,61 +152,41 @@ namespace ivy {
             static constexpr char8_t icont = 0b10000000;
 
             for (auto c : r) {
-                // 1-byte encoding
                 if (c <= max1b) {
-                    *out++ = static_cast<char_type>(c);
-                    continue;
-                }
+                    *out++ = static_cast<utf8_encoding::char_type>(c);
 
-                // 2-byte encoding
-                if (c <= max2b) {
-                    *out++ = static_cast<char_type>(i2b |
-                                                    detail::bit_slice(c, 6, 5));
-                    *out++ = static_cast<char_type>(icont |
-                                                    detail::bit_slice(c, 0, 6));
-                    continue;
-                }
+                } else if (c <= max2b) {
+                    *out++ = static_cast<utf8_encoding::char_type>(
+                        i2b | detail::bit_slice(c, 6, 5));
+                    *out++ = static_cast<utf8_encoding::char_type>(
+                        icont | detail::bit_slice(c, 0, 6));
 
-                // 3-byte encoding
-                if (c <= max3b) {
-                    *out++ = static_cast<char_type>(
+                } else if (c <= max3b) {
+                    *out++ = static_cast<utf8_encoding::char_type>(
                         i3b | detail::bit_slice(c, 12, 4));
-                    *out++ = static_cast<char_type>(icont |
-                                                    detail::bit_slice(c, 6, 6));
-                    *out++ = static_cast<char_type>(icont |
-                                                    detail::bit_slice(c, 0, 6));
-                    continue;
-                }
+                    *out++ = static_cast<utf8_encoding::char_type>(
+                        icont | detail::bit_slice(c, 6, 6));
+                    *out++ = static_cast<utf8_encoding::char_type>(
+                        icont | detail::bit_slice(c, 0, 6));
 
-                // 4-byte encoding
-                if (c <= max4b) {
-                    *out++ = static_cast<char_type>(
+                } else if (c <= max4b) {
+                    *out++ = static_cast<utf8_encoding::char_type>(
                         i4b | detail::bit_slice(c, 18, 3));
-                    *out++ = static_cast<char_type>(
+                    *out++ = static_cast<utf8_encoding::char_type>(
                         icont | detail::bit_slice(c, 12, 6));
-                    *out++ = static_cast<char_type>(icont |
-                                                    detail::bit_slice(c, 6, 6));
-                    *out++ = static_cast<char_type>(icont |
-                                                    detail::bit_slice(c, 0, 6));
-                    continue;
-                }
+                    *out++ = static_cast<utf8_encoding::char_type>(
+                        icont | detail::bit_slice(c, 6, 6));
+                    *out++ = static_cast<utf8_encoding::char_type>(
+                        icont | detail::bit_slice(c, 0, 6));
 
-                return make_unexpected(
-                    make_error_code(charenc_errc::unrepresentable_codepoint));
+                } else
+                    throw encoding_error("invalid encoding");
             }
-
-            return {};
         }
 
-        // clang-format off
-        template<std::ranges::range Range>
-        static auto validate(Range &&r)
-            -> expected<void, std::error_code>
-            requires (std::same_as<char_type, std::ranges::range_value_t<Range>>)
-        // clang-format on
+        template <std::output_iterator<char32_t> output_iterator>
+        auto flush(output_iterator) -> void
         {
-            null_output_iterator<char32_t> out;
-            return to_char32(std::forward<Range>(r), out);
         }
     };
 

@@ -6,12 +6,15 @@
 #ifndef IVY_CHARENC_UTF32_HXX_INCLUDED
 #define IVY_CHARENC_UTF32_HXX_INCLUDED
 
+#include <deque>
 #include <iterator>
 #include <ranges>
 #include <string>
 
 #include <ivy/charenc/error.hxx>
+#include <ivy/charenc.hxx>
 #include <ivy/expected.hxx>
+#include <ivy/iterator.hxx>
 
 namespace ivy {
 
@@ -22,27 +25,56 @@ namespace ivy {
         {
             return std::char_traits<char32_t>::length(s);
         }
+    };
 
-        // clang-format off
-        template<std::ranges::range Range, std::output_iterator<char32_t> OutputIterator>
-        static auto to_char32(Range &&r, OutputIterator out)
-            -> expected<void, std::error_code>
-            requires (std::same_as<char_type, std::ranges::range_value_t<Range>>)
-        // clang-format on
+    template <character_encoding target_encoding>
+    class charconv<std::byte, target_encoding> {
+        charconv<target_encoding, utf32_encoding> _charconv;
+        charconv_options _options;
+        std::uint8_t _buffer[sizeof(typename target_encoding::char_type)];
+        unsigned _bufp = 0;
+
+    public:
+        charconv(charconv_options options) noexcept : _options(options) {}
+
+        template <std::ranges::input_range input_range,
+                  std::output_iterator<char32_t> output_iterator>
+        auto convert(input_range &&r, output_iterator &&out) -> void
         {
-            std::ranges::copy(r, out);
-            return {};
+            null_output_iterator nout;
+
+            for (auto &&b : r) {
+                _buffer[_bufp++] = std::to_integer<std::uint8_t>(b);
+
+                if (_bufp < sizeof(_buffer))
+                    continue;
+
+                typename target_encoding::char_type c{};
+                for (unsigned i = 0; i < sizeof(_buffer); ++i) {
+                    if (_options.endianness == std::endian::big)
+                        c |= static_cast<typename target_encoding::char_type>(
+                                 _buffer[i])
+                             << (8 * ((sizeof(_buffer) - 1) - i));
+                    else
+                        c |= static_cast<typename target_encoding::char_type>(
+                                 _buffer[i])
+                             << (8 * i);
+                }
+
+                _charconv.convert(std::span(&c, 1), nout);
+                *out++ = c;
+                _bufp = 0;
+            }
         }
 
-        // clang-format off
-        template<std::ranges::range Range, std::output_iterator<char_type> OutputIterator>
-        static auto from_char32(Range &&r, OutputIterator out)
-            -> expected<void, std::error_code>
-            requires (std::same_as<char32_t, std::ranges::range_value_t<Range>>)
-        // clang-format on
+        template <std::output_iterator<char32_t> output_iterator>
+        auto flush(output_iterator &&) -> void
         {
-            std::ranges::copy(r, out);
-            return {};
+            if (_bufp)
+                throw encoding_error("invalid encoding");
+
+            null_output_iterator nout;
+            _charconv.flush(nout);
         }
     };
 

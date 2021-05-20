@@ -29,7 +29,7 @@ if(WIN32)
         src/win32/hash.cxx
         src/win32/error.cxx 
         src/win32/bcrypt.cxx
-        src/win32/registry.cxx)
+        src/win32/registry.cxx )
 
     target_link_libraries(ivy PUBLIC bcrypt)
 endif()

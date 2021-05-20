@@ -31,104 +31,61 @@ namespace ivy {
     // The system wide encoding is always UTF-16 on Windows.
 
     struct system_wide_encoding {
-        static_assert(sizeof(wchar_t) == sizeof(char16_t));
-
         using char_type = wchar_t;
 
         static auto length(char_type const *s) -> std::size_t
         {
             return std::char_traits<char_type>::length(s);
         }
+    };
 
-        // clang-format off
-        template<std::ranges::range Range, std::output_iterator<char32_t> OutputIterator>
-        static auto to_char32(Range &&r, OutputIterator out)
-            -> expected<void, std::error_code>
-            requires (std::same_as<char_type, std::ranges::range_value_t<Range>>)
-        // clang-format on
+    template <>
+    class charconv<system_wide_encoding, utf32_encoding> {
+        charconv<utf16_encoding, utf32_encoding> _charconv;
+
+    public:
+        charconv(charconv_options options = {}) noexcept : _charconv(options) {}
+
+        template <std::ranges::input_range input_range,
+                  std::output_iterator<char32_t> output_iterator>
+        auto convert(input_range &&r, output_iterator out) -> void
         {
-            detail::utf16_decoder decoder(out);
-            for (char_type c : r) {
-                auto ok = decoder.put(static_cast<char16_t>(c));
-
-                if (!ok)
-                    return make_unexpected(ok.error());
+            for (auto &&c : r) {
+                auto c16 = static_cast<char16_t>(c);
+                _charconv.convert(std::span(&c16, 1), out);
             }
-
-            if (!decoder.ok())
-                return make_unexpected(
-                    make_error_code(charenc_errc::invalid_encoding));
-
-            return {};
         }
 
-        // clang-format off
-        template<std::ranges::range Range, std::output_iterator<char32_t> OutputIterator>
-        static auto to_char32(Range &&r, std::endian endianness, OutputIterator out)
-            -> expected<void, std::error_code>
-            requires (std::same_as<std::byte, std::ranges::range_value_t<Range>>)
-        // clang-format on
+        template <std::output_iterator<char32_t> output_iterator>
+        auto flush(output_iterator out) -> void
         {
-            detail::utf16_decoder decoder(out);
-            auto begin = std::ranges::begin(r);
-            auto end = std::ranges::end(r);
-
-            while (begin < end) {
-                auto b0 = static_cast<char_type>(*begin++);
-
-                if (begin == end)
-                    return make_unexpected(
-                        make_error_code(charenc_errc::invalid_encoding));
-
-                auto b1 = static_cast<char_type>(*begin++);
-                char16_t c;
-                if (endianness == std::endian::big)
-                    c = static_cast<char_type>(b0 << 8) | b1;
-                else
-                    c = static_cast<char_type>(b1 << 8) | b0;
-
-                auto ok = decoder.put(c);
-
-                if (!ok)
-                    return make_unexpected(ok.error());
-            }
-
-            if (!decoder.ok())
-                return make_unexpected(
-                    make_error_code(charenc_errc::invalid_encoding));
-
-            return {};
-        }
-
-        // clang-format off
-        template<std::ranges::range Range, std::output_iterator<char_type> OutputIterator>
-        static auto from_char32(Range &&r, OutputIterator out)
-            -> expected<void, std::error_code>
-            requires (std::same_as<char32_t, std::ranges::range_value_t<Range>>)
-        // clang-format on
-        {
-            detail::utf16_encoder encoder(out);
-
-            for (auto c : r) {
-                auto ok = encoder.put(c);
-                if (!ok)
-                    return make_unexpected(ok.error());
-            }
-
-            return {};
-        }
-
-        // clang-format off
-        template<std::ranges::range Range>
-        static auto validate(Range &&r)
-            -> expected<void, std::error_code>
-            requires (std::same_as<char_type, std::ranges::range_value_t<Range>>)
-        // clang-format on
-        {
-            null_output_iterator<char32_t> out;
-            return to_char32(std::forward<Range>(r), out);
+            _charconv.flush(out);
         }
     };
+
+    template <>
+    class charconv<utf32_encoding, system_wide_encoding> {
+        charconv<utf32_encoding, utf16_encoding> _charconv;
+
+    public:
+        charconv(charconv_options options = {}) noexcept : _charconv(options) {}
+
+        template <std::ranges::input_range input_range,
+                  std::output_iterator<wchar_t> output_iterator>
+        auto convert(input_range &&r, output_iterator out) -> void
+        {
+            static_cast_iterator<char16_t, wchar_t> cit(out);
+            _charconv.convert(r, cit);
+        }
+
+        template <std::output_iterator<char32_t> output_iterator>
+        auto flush(output_iterator out) -> void
+        {
+            static_cast_iterator<char16_t, wchar_t> cit(out);
+            _charconv.flush(cit);
+        }
+    };
+
 #endif // _WIN32
 
 } // namespace ivy

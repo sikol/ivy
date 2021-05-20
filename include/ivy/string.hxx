@@ -297,18 +297,18 @@ namespace ivy {
     {
         using TargetEncoding = typename Target::encoding_type;
 
-        std::vector<char32_t> utf32;
+        std::vector<typename TargetEncoding::char_type> chars;
 
-        auto r = SourceEncoding::to_char32(s, std::back_inserter(utf32));
-        if (!r)
-            return make_unexpected(r.error());
+        charconv<SourceEncoding, TargetEncoding> cc;
+        try {
+            cc.convert(s, std::back_inserter(chars));
+            cc.flush(std::back_inserter(chars));
+        } catch (encoding_error const &) {
+            return make_unexpected(
+                make_error_code(charenc_errc::invalid_encoding));
+        }
 
-        std::vector<typename Target::value_type> tchars;
-        r = TargetEncoding::from_char32(utf32, std::back_inserter(tchars));
-        if (!r)
-            return make_unexpected(r.error());
-
-        return Target(&tchars[0], tchars.size());
+        return Target(&chars[0], chars.size());
     }
 
     template <typename Target, std::ranges::range Range>
@@ -318,20 +318,17 @@ namespace ivy {
     {
         using encoding = typename Target::encoding_type;
 
-        auto bytes = as_bytes(std::span(r));
+        std::vector<typename encoding::char_type> chars;
+        charconv<std::byte, encoding> tx({.endianness = endianness});
 
-        std::vector<char32_t> utf32;
-        auto ok =
-            encoding::to_char32(bytes, endianness, std::back_inserter(utf32));
-        if (!ok)
-            return make_unexpected(ok.error());
+        try {
+            tx.convert(r, std::back_inserter(chars));
+            tx.flush(std::back_inserter(chars));
+        } catch (encoding_error const &) {
+            return make_unexpected(charenc_errc::invalid_encoding);
+        }
 
-        std::vector<typename Target::value_type> tchars;
-        ok = encoding::from_char32(utf32, std::back_inserter(tchars));
-        if (!ok)
-            return make_unexpected(ok.error());
-
-        return Target(&tchars[0], tchars.size());
+        return Target(&chars[0], chars.size());
     }
 
 } // namespace ivy

@@ -5,7 +5,10 @@
 
 #include <format>
 
+#include <ivy/charenc.hxx>
 #include <ivy/charenc/error.hxx>
+#include <ivy/charenc/utf16.hxx>
+#include <ivy/charenc/utf8.hxx>
 
 namespace ivy {
 
@@ -21,16 +24,18 @@ namespace ivy {
             switch (static_cast<charenc_errc>(c)) {
             case charenc_errc::no_error:
                 return "no error";
+
             case charenc_errc::unrepresentable_character:
                 return "source character cannot be represented in the target "
                        "character set";
+
             case charenc_errc::unrepresentable_codepoint:
                 return "source codepoint cannot be represented in the target "
                        "encoding";
+
             default:
                 return "unknown error " + std::to_string(c);
             }
-
         }
 
     } // namespace detail
@@ -46,4 +51,4 @@ namespace ivy {
         return {static_cast<int>(e), charenc_errc_category()};
     }
 
-} // namespace ivy::win32
+} // namespace ivy

@@ -130,16 +130,13 @@ TEST_CASE("ivy:u8string", "[ivy][string][charenc][utf8]")
         std::vector<char8_t> chars(data.size());
         std::memcpy(&chars[0], data.data(), data.size());
 
-        auto r = ivy::utf8_encoding::validate(chars);
-        REQUIRE(!r);
-
         auto bytes = as_bytes(std::span(data));
         auto s = ivy::bytes_to_string<ivy::u8string>(bytes);
         REQUIRE(!s);
     }
 }
 
-TEST_CASE("ivy:u16string", "[ivy][string][charenc][utf16]")
+TEST_CASE("ivy:utf-16be", "[ivy][string][charenc][utf16]")
 {
     using namespace std::string_view_literals;
 
@@ -148,14 +145,14 @@ TEST_CASE("ivy:u16string", "[ivy][string][charenc][utf16]")
         std::u32string_view utf32_s;
     };
 
-    std::array test_vectors_be{
+    std::array test_vectors{
         test_vector{"\x00\x24"sv, U"\u0024"sv},
         test_vector{"\x20\xac"sv, U"\u20ac"sv},
         test_vector{"\xd8\x01\xdc\x37", U"\U00010437"sv},
         test_vector{"\xd8\x52\xdf\x62", U"\U00024B62"sv},
     };
 
-    for (auto &&vec : test_vectors_be) {
+    for (auto &&vec : test_vectors) {
         auto bytes = as_bytes(std::span(vec.bytes));
 
         auto hexchars = ivy::bintext_encode_to_string<ivy::hexchars_lc>(bytes);
@@ -167,6 +164,43 @@ TEST_CASE("ivy:u16string", "[ivy][string][charenc][utf16]")
 
         auto u32str = ivy::u32string(vec.utf32_s.data(), vec.utf32_s.size());
 
+        auto xcoded = ivy::transcode<ivy::u32string>(*u16str);
+        REQUIRE(xcoded);
+        REQUIRE(*xcoded == u32str);
+
+        auto recoded = ivy::transcode<ivy::u16string>(*xcoded);
+        REQUIRE(recoded);
+        REQUIRE(*recoded == *u16str);
+    }
+}
+
+TEST_CASE("ivy:utf-16le", "[ivy][string][charenc][utf16]")
+{
+    using namespace std::string_view_literals;
+
+    struct test_vector {
+        std::string_view bytes;
+        std::u32string_view utf32_s;
+    };
+
+    std::array test_vectors{
+        test_vector{"\x24\x00"sv, U"\u0024"sv},
+        test_vector{"\xac\x20"sv, U"\u20ac"sv},
+        test_vector{"\x01\xd8\x37\xdc", U"\U00010437"sv},
+        test_vector{"\x52\xd8\x62\xdf", U"\U00024B62"sv},
+    };
+
+    for (auto &&vec : test_vectors) {
+        auto bytes = as_bytes(std::span(vec.bytes));
+
+        auto hexchars = ivy::bintext_encode_to_string<ivy::hexchars_lc>(bytes);
+        INFO(hexchars);
+
+        auto u16str =
+            ivy::bytes_to_string<ivy::u16string>(bytes, std::endian::little);
+        REQUIRE(u16str);
+
+        auto u32str = ivy::u32string(vec.utf32_s.data(), vec.utf32_s.size());
 
         auto xcoded = ivy::transcode<ivy::u32string>(*u16str);
         REQUIRE(xcoded);
@@ -176,6 +210,16 @@ TEST_CASE("ivy:u16string", "[ivy][string][charenc][utf16]")
         REQUIRE(recoded);
         REQUIRE(*recoded == *u16str);
     }
+}
+
+TEST_CASE("ivy:utf-16be invalid", "[ivy][string][charenc][utf16]")
+{
+    using namespace std::string_view_literals;
+
+    struct test_vector {
+        std::string_view bytes;
+        std::u32string_view utf32_s;
+    };
 
     std::array invalid_utf16_sequences{
         "\xd8\x01"sv,
