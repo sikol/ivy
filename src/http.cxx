@@ -230,6 +230,6 @@ namespace ivy::http {
         return {c, http_errc_category()};
     }
 
-    //http_header::http_header() = default;
+    http_header::http_header() = default;
 
 } // namespace ivy::http

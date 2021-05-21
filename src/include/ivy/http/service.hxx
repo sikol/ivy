@@ -25,12 +25,12 @@ namespace ivy::http {
         u8string value;
     };
 
-    //class http_header {
-    //    std::unordered_map<astring, header_field> _fields;
+    class http_header {
+        std::unordered_map<astring, header_field> _fields;
 
-    //public:
-    //    http_header();
-    //};
+    public:
+        http_header();
+    };
 
     class service : public ivy::noncopyable {
     protected:

@@ -20,7 +20,7 @@
 #include <ivy/charenc/utf32.hxx>
 #include <ivy/charenc/utf8.hxx>
 #include <ivy/charenc/ascii.hxx>
-
+#include <ivy/hash.hxx>
 #include <ivy/expected.hxx>
 
 namespace ivy {
@@ -333,20 +333,28 @@ namespace ivy {
         return Target(&chars[0], chars.size());
     }
 
-} // namespace ivy
-
-#if 0
-namespace std {
-    template <>
-    struct hash<S> {
-        std::size_t operator()(S const &s) const noexcept
+    template <typename encoding, typename alloc>
+    struct hash<basic_string<encoding, alloc>> {
+        auto operator()(basic_string<encoding, alloc> &v) const noexcept
+            -> std::size_t
         {
-            std::size_t h1 = std::hash<std::string>{}(s.first_name);
-            std::size_t h2 = std::hash<std::string>{}(s.last_name);
-            return h1 ^ (h2 << 1); // or use boost::hash_combine
+            auto bytes = as_bytes(std::span(v.data(), v.size()));
+            return detail::hash_bytes(bytes);
         }
     };
+
+} // namespace ivy
+
+namespace std {
+
+    template <typename encoding, typename alloc>
+    struct hash<ivy::basic_string<encoding, alloc>> {
+        std::size_t operator()(ivy::basic_string<encoding, alloc> &v) const noexcept
+        {
+            return ivy::hash<ivy::basic_string<encoding, alloc>>{}();
+        }
+    };
+
 } // namespace std
-#endif
 
 #endif // IVY_STRING_HXX_INCLUDED

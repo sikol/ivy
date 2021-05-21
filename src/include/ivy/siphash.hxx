@@ -23,6 +23,7 @@
 
 #include <cstddef>
 #include <span>
+#include <array>
 
 #include <ivy/check.hxx>
 
@@ -30,19 +31,19 @@ namespace ivy {
 
     namespace detail {
 
-        auto sip_u32u8le(std::uint32_t v, std::byte *a) -> void {
+        inline auto sip_u32u8le(std::uint32_t v, std::byte *a) -> void {
             a[0] = static_cast<std::byte>(v);
             a[1] = static_cast<std::byte>(v >> 8);
             a[2] = static_cast<std::byte>(v >> 16);
             a[3] = static_cast<std::byte>(v >> 24);
         }
 
-        auto sip_u64u8le(std::uint64_t v, std::byte *a) -> void {
+        inline auto sip_u64u8le(std::uint64_t v, std::byte *a) -> void {
             sip_u32u8le(static_cast<std::uint32_t>(v), a);
             sip_u32u8le(static_cast<std::uint32_t>(v >> 32), a + 4);
         }
 
-        auto sip_u8u64le(std::byte const *a) -> std::uint64_t {
+        inline auto sip_u8u64le(std::byte const *a) -> std::uint64_t {
             std::uint64_t r = 0;
             r |= static_cast<std::uint64_t>(a[0]);
             r |= static_cast<std::uint64_t>(a[1]) << 8;
@@ -55,7 +56,7 @@ namespace ivy {
             return r;
         }
 
-        auto sip_rotl(std::uint64_t x, std::uint64_t b) -> std::uint64_t
+        inline auto sip_rotl(std::uint64_t x, std::uint64_t b) -> std::uint64_t
         {
             return (x << b) | (x >> (64 - b));
         }
@@ -69,7 +70,7 @@ namespace ivy {
             };
         };
 
-        auto sip_round(sip_state &v) -> void
+        inline auto sip_round(sip_state &v) -> void
         {
             v.v[0] += v.v[1];
             v.v[1] = sip_rotl(v.v[1], 13);
