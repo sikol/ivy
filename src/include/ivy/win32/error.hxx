@@ -11,6 +11,7 @@
 #include <ivy/win32/windows.hxx>
 
 #include <ntstatus.h>
+#include <bcrypt.h> // for NTSTATUS
 
 namespace ivy::win32 {
 

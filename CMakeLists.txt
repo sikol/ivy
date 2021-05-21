@@ -6,6 +6,7 @@ cmake_minimum_required (VERSION 3.19)
 project("ivy")
 
 option(IVY_DISABLE_TESTS "Don't build tests" OFF)
+option(IVY_DISABLE_SAMPLES "Don't build samples" OFF)
 
 add_subdirectory(thirdparty)
 
@@ -14,26 +15,8 @@ if(NOT IVY_DISABLE_TESTS)
     add_subdirectory(tests)
 endif()
 
-add_library(ivy)
-target_include_directories(ivy PUBLIC include)
-target_compile_features(ivy PUBLIC cxx_std_20)
-target_sources(ivy PRIVATE 
-    src/config.cxx
-    src/uri.cxx
-    src/datum.cxx
-    src/log.cxx
-    src/charenc.cxx)
-    
-if(WIN32)
-    target_sources(ivy PRIVATE 
-        src/win32/hash.cxx
-        src/win32/error.cxx 
-        src/win32/bcrypt.cxx
-        src/win32/registry.cxx )
-
-    target_link_libraries(ivy PUBLIC bcrypt)
+if(NOT IVY_DISABLE_SAMPLES)
+    add_subdirectory(samples)
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(ivy PUBLIC IVY_ENABLE_TRACING)
-endif()
+add_subdirectory(src)

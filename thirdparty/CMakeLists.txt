@@ -4,3 +4,7 @@
 if(NOT IVY_DISABLE_TESTS AND NOT TARGET Catch2)
     add_subdirectory(catch2)
 endif()
+
+if(NOT TARGET WIL)
+    add_subdirectory(wil)
+endif()

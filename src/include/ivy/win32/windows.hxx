@@ -16,10 +16,17 @@
 #    define IVY_UNDEFINE_NOMINMAX
 #endif
 
-// We don't define WIN32_LEAN_AND_MEAN because it hides some definitions we
-// need, like NTSTATUS.
+#ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#    define IVY_UNDEFINE_WIN32_LEAN_AND_MEAN
+#endif
 
 #include <windows.h>
+
+#ifdef IVY_UNDEFINE_WIN32_LEAN_AND_MEAN
+#    undef WIN32_LEAN_AND_MEAN
+#    undef IVY_UNDEFINE_WIN32_LEAN_AND_MEAN
+#endif
 
 #ifdef IVY_UNDEFINE_NOMINMAX
 #    undef NOMINMAX

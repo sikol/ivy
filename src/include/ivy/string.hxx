@@ -19,6 +19,7 @@
 #include <ivy/charenc/utf16.hxx>
 #include <ivy/charenc/utf32.hxx>
 #include <ivy/charenc/utf8.hxx>
+#include <ivy/charenc/ascii.hxx>
 
 #include <ivy/expected.hxx>
 
@@ -98,6 +99,7 @@ namespace ivy {
         auto end() const noexcept -> const_iterator;
     };
 
+    using astring = basic_string<ascii_encoding>;
     using wstring = basic_string<system_wide_encoding>;
     using u8string = basic_string<utf8_encoding>;
     using u16string = basic_string<utf16_encoding>;
@@ -332,5 +334,19 @@ namespace ivy {
     }
 
 } // namespace ivy
+
+#if 0
+namespace std {
+    template <>
+    struct hash<S> {
+        std::size_t operator()(S const &s) const noexcept
+        {
+            std::size_t h1 = std::hash<std::string>{}(s.first_name);
+            std::size_t h2 = std::hash<std::string>{}(s.last_name);
+            return h1 ^ (h2 << 1); // or use boost::hash_combine
+        }
+    };
+} // namespace std
+#endif
 
 #endif // IVY_STRING_HXX_INCLUDED
