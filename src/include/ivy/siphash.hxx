@@ -92,7 +92,7 @@ namespace ivy {
     template <std::size_t crounds = 2, std::size_t drounds = 4>
     auto siphash(std::span<std::byte const> in,
                  std::span<std::byte const> k,
-                 std::span<std::byte> out) -> int
+                 std::span<std::byte> out) -> void
     {
         IVY_CHECK(k.size() == 16, "siphash: invalid key size");
         IVY_CHECK(out.size() == 8 || out.size() == 16,
@@ -169,7 +169,7 @@ namespace ivy {
         detail::sip_u64u8le(b, out.data());
 
         if (outlen == 8)
-            return 0;
+            return;
 
         state.v[1] ^= 0xdd;
 
@@ -178,8 +178,6 @@ namespace ivy {
 
         b = state.v[0] ^ state.v[1] ^ state.v[2] ^ state.v[3];
         detail::sip_u64u8le(b, out.data() + 8);
-
-        return 0;
     }
 
 } // namespace ivy
