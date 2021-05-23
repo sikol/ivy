@@ -31,6 +31,8 @@ namespace ivy::win32 {
                                                   decltype(::HttpCloseUrlGroup),
                                                   ::HttpCloseUrlGroup>;
 
+    class http_request_queue;
+
     class http_url_group : public ivy::noncopyable {
         unique_http_url_group _handle{};
 
@@ -43,6 +45,9 @@ namespace ivy::win32 {
 
         auto operator*() noexcept -> unique_http_url_group &;
         auto operator->() noexcept -> unique_http_url_group *;
+
+        auto set_request_queue(http_request_queue &)
+            -> expected<void, std::error_code>;
 
         auto add_url(wstring const &url, HTTP_URL_CONTEXT context)
             -> expected<void, std::error_code>;

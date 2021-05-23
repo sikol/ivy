@@ -47,6 +47,8 @@ namespace ivy {
     using astringchannel = basic_stringchannel<ascii_encoding>;
     using wstringchannel = basic_stringchannel<system_wide_encoding>;
 
+    static_assert(sequential_channel<u8stringchannel>);
+
     template <character_encoding encoding, typename allocator>
     basic_stringchannel<encoding, allocator>::basic_stringchannel(
         basic_string<encoding, allocator> const &s)

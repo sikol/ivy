@@ -89,7 +89,7 @@ namespace ivy {
         charconv(charconv_options = {}) noexcept {}
 
         template <std::ranges::input_range input_range,
-                  std::output_iterator<char8_t> output_iterator>
+                  std::output_iterator<char16_t> output_iterator>
         auto convert(input_range &&r, output_iterator out) -> void
         {
             for (auto c : r) {
@@ -112,7 +112,7 @@ namespace ivy {
             }
         }
 
-        template <std::output_iterator<char32_t> output_iterator>
+        template <std::output_iterator<char16_t> output_iterator>
         auto flush(output_iterator) -> void
         {
         }

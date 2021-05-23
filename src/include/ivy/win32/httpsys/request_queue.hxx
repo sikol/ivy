@@ -34,8 +34,23 @@ namespace ivy::win32 {
                         decltype(::HttpCloseRequestQueue),
                         ::HttpCloseRequestQueue>;
 
+    namespace detail {
+
+        template <typename T>
+        struct process_heap_free {
+            auto operator()(T *p) const noexcept -> void
+            {
+                ::HeapFree(::GetProcessHeap(), 0, p);
+            }
+        };
+
+    } // namespace detail
+
+    using http_request_pointer =
+        std::unique_ptr<HTTP_REQUEST, detail::process_heap_free<HTTP_REQUEST>>;
+
     class http_request_queue : public ivy::noncopyable {
-        unique_http_request_queue _queue{};
+        unique_http_request_queue _handle{};
 
     public:
         http_request_queue(std::optional<wstring> name,
@@ -45,6 +60,9 @@ namespace ivy::win32 {
 
         http_request_queue(http_request_queue &&) noexcept;
         auto operator=(http_request_queue &&) noexcept -> http_request_queue &;
+
+        auto read_request() -> expected<http_request_pointer, error>;
+        auto get_handle() -> HANDLE;
     };
 
 } // namespace ivy::win32

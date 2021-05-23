@@ -74,7 +74,7 @@ namespace ivy {
                   std::output_iterator<wchar_t> output_iterator>
         auto convert(input_range &&r, output_iterator out) -> void
         {
-            static_cast_iterator<char16_t, wchar_t> cit(out);
+            auto cit = make_static_cast_iterator<char16_t, wchar_t>(out);
             _charconv.convert(r, cit);
         }
 

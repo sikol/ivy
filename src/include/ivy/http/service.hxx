@@ -36,9 +36,15 @@ namespace ivy::http {
         http_header header;
     };
 
+    class request_context {
+    protected:
+        request_context() noexcept = default;
+        ~request_context() = default;
+    };
+
     struct http_listener {
         net::uri prefix;
-        std::function<void(http_request const &)> handler;
+        std::function<void(request_context &, http_request const &)> handler;
     };
 
     class service : public ivy::noncopyable {
@@ -47,12 +53,14 @@ namespace ivy::http {
 
     public:
         service(service &&) noexcept = delete;
-        auto operator=(service &&) -> service & = delete;
-
         virtual ~service();
+
+        auto operator=(service &&) -> service & = delete;
 
         virtual auto add_listener(http_listener const &)
             -> expected<void, error> = 0;
+
+        virtual auto run() -> expected<void, error> = 0;
     };
 
 } // namespace ivy::http

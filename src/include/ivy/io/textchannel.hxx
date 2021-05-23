@@ -16,7 +16,7 @@
 
 namespace ivy {
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     class textchannel final : layer_base<base_channel, ownership> {
     private:
         std::error_code _error;
@@ -63,41 +63,41 @@ namespace ivy {
         explicit operator bool() const noexcept;
     };
 
-    template <typename base_channel>
+    template <sequential_channel base_channel>
     auto make_textchannel(base_channel &b)
     {
         return textchannel<base_channel, layer_ownership::borrow_layer>(b);
     }
 
-    template <typename base_channel>
+    template <sequential_channel base_channel>
     auto make_textchannel(base_channel &&b)
     {
         return textchannel<base_channel, layer_ownership::own_layer>(
             std::move(b));
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto textchannel<base_channel, ownership>::get_error() const noexcept
         -> std::error_code
     {
         return _error;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto textchannel<base_channel, ownership>::set_error(
         std::error_code error) noexcept -> std::error_code
     {
         return std::exchange(_error, error);
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto textchannel<base_channel, ownership>::clear_error() noexcept
         -> std::error_code
     {
         return std::exchange(_error, std::error_code());
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto textchannel<base_channel, ownership>::read(
         std::span<value_type> buf) noexcept
         -> expected<io_size_t, std::error_code>
@@ -108,7 +108,7 @@ namespace ivy {
         return this->get_base_layer().read(buf);
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto textchannel<base_channel, ownership>::write(
         std::span<value_type const> buf) noexcept
         -> expected<io_size_t, std::error_code>
@@ -119,7 +119,7 @@ namespace ivy {
         return this->get_base_layer().write(buf);
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     textchannel<base_channel, ownership>::operator bool() const noexcept
     {
         return !_error;
@@ -131,7 +131,7 @@ namespace ivy {
      *
      */
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan,
                     typename textchannel<base_channel, ownership>::value_type c)
         -> textchannel<base_channel, ownership> &
@@ -140,7 +140,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(
         textchannel<base_channel, ownership> &chan,
         typename textchannel<base_channel, ownership>::value_type const *c)
@@ -152,7 +152,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel,
+    template <sequential_channel base_channel,
               layer_ownership ownership,
               typename allocator>
     auto
@@ -168,7 +168,7 @@ namespace ivy {
 
     namespace detail {
 
-        template <typename base_channel,
+        template <sequential_channel base_channel,
                   layer_ownership ownership,
                   std::signed_integral integer>
         auto write_number(textchannel<base_channel, ownership> &chan, integer v)
@@ -195,7 +195,7 @@ namespace ivy {
             chan.write(std::span(p, std::ranges::end(b)));
         }
 
-        template <typename base_channel,
+        template <sequential_channel base_channel,
                   layer_ownership ownership,
                   std::unsigned_integral integer>
         auto write_number(textchannel<base_channel, ownership> &chan, integer v)
@@ -216,7 +216,7 @@ namespace ivy {
 
     } // namespace detail
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan, short i)
         -> textchannel<base_channel, ownership> &
     {
@@ -224,7 +224,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan,
                     unsigned short i) -> textchannel<base_channel, ownership> &
     {
@@ -232,7 +232,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan, int i)
         -> textchannel<base_channel, ownership> &
     {
@@ -240,7 +240,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan, unsigned int i)
         -> textchannel<base_channel, ownership> &
     {
@@ -248,7 +248,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan, long i)
         -> textchannel<base_channel, ownership> &
     {
@@ -256,7 +256,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan, unsigned long i)
         -> textchannel<base_channel, ownership> &
     {
@@ -264,7 +264,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan, long long i)
         -> textchannel<base_channel, ownership> &
     {
@@ -272,7 +272,7 @@ namespace ivy {
         return chan;
     }
 
-    template <typename base_channel, layer_ownership ownership>
+    template <sequential_channel base_channel, layer_ownership ownership>
     auto operator<<(textchannel<base_channel, ownership> &chan,
                     unsigned long long i)
         -> textchannel<base_channel, ownership> &

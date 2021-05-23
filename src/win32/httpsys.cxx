@@ -7,6 +7,7 @@
 #include <memory>
 
 #include <ivy/http/service.hxx>
+#include <ivy/log.hxx>
 #include <ivy/noncopyable.hxx>
 #include <ivy/string.hxx>
 #include <ivy/win32/error.hxx>
@@ -81,7 +82,7 @@ namespace ivy::win32 {
                                           name ? name->c_str() : nullptr,
                                           security_attributes,
                                           flags,
-                                          &_queue);
+                                          &_handle);
 
         if (r != NO_ERROR) {
             auto err = make_win32_error(r);
@@ -97,6 +98,48 @@ namespace ivy::win32 {
         -> http_request_queue & = default;
 
     http_request_queue::~http_request_queue() = default;
+
+    auto http_request_queue::get_handle() -> HANDLE
+    {
+        return _handle.get();
+    }
+
+    auto http_request_queue::read_request()
+        -> expected<http_request_pointer, error>
+    {
+        // Find the size of the request.
+        HTTP_REQUEST hr{};
+        ULONG request_size{};
+
+        auto r = ::HttpReceiveHttpRequest(
+            _handle.get(), 0, 0, &hr, sizeof(hr), &request_size, nullptr);
+
+        if (r != ERROR_MORE_DATA)
+            return make_unexpected(http::http_error(
+                std::format("HttpReceiveHttpRequest() failed: {}",
+                            make_win32_error(r).message())));
+
+        auto p = ::HeapAlloc(::GetProcessHeap(), 0, request_size);
+        if (p == nullptr)
+            return make_unexpected(http::http_error(
+                "cannot allocate request structure: out of memory"));
+
+        auto reqp = http_request_pointer(static_cast<HTTP_REQUEST *>(p));
+
+        r = ::HttpReceiveHttpRequest(_handle.get(),
+                                     hr.RequestId,
+                                     0,
+                                     reqp.get(),
+                                     request_size,
+                                     &request_size,
+                                     nullptr);
+        if (r != NO_ERROR)
+            return make_unexpected(http::http_error(
+                std::format("HttpReceiveHttpRequest() failed: {}",
+                            make_win32_error(r).message())));
+
+        return reqp;
+    }
 
     /*************************************************************************
      *
@@ -145,14 +188,22 @@ namespace ivy::win32 {
         auto r = ::HttpCreateUrlGroup(session->get(), &_handle, 0);
 
         if (r != NO_ERROR) {
+            IVY_TRACE("http_url_group: creation failed {}", r);
+
             auto err = make_win32_error(r);
             throw http::http_error(
                 std::format("HttpCreateUrlGroup() failed: {}", err.message()));
         }
+
+        IVY_TRACE("http_url_group: created {}", _handle.get());
     }
 
     http_url_group::http_url_group(http_url_group &&) noexcept = default;
-    http_url_group::~http_url_group() = default;
+
+    http_url_group::~http_url_group()
+    {
+        IVY_TRACE("http_url_group: destructing {}", _handle.get());
+    }
 
     auto http_url_group::operator=(http_url_group &&) noexcept
         -> http_url_group & = default;
@@ -178,6 +229,33 @@ namespace ivy::win32 {
 
         return {};
     }
+
+    auto http_url_group::set_request_queue(http_request_queue &queue)
+        -> expected<void, std::error_code>
+    {
+        HTTP_BINDING_INFO binding{};
+        binding.Flags.Present = 1;
+        binding.RequestQueueHandle = queue.get_handle();
+
+        auto r = ::HttpSetUrlGroupProperty(_handle.get(),
+                                           HttpServerBindingProperty,
+                                           &binding,
+                                           sizeof(binding));
+
+        if (r != NO_ERROR)
+            return make_unexpected(make_win32_error(r));
+
+        return {};
+    }
+
+    /*************************************************************************
+     *
+     * httpsys_request_context
+     *
+     */
+
+    class httpsys_request_context : public http::request_context {
+    };
 
     /*************************************************************************
      *
@@ -210,6 +288,8 @@ namespace ivy::win32 {
 
         auto add_listener(http::http_listener const &)
             -> expected<void, error> override;
+
+        auto run() -> expected<void, error> override;
     };
 
     auto make_httpsys_service()
@@ -232,10 +312,85 @@ namespace ivy::win32 {
             new (std::nothrow) http::http_listener(lsn));
 
         if (!lsnp)
+            return make_unexpected(std::system_error(
+                std::make_error_code(std::errc::not_enough_memory)));
+
+        auto wstr = transcode<wstring>(str(lsn.prefix));
+        if (!wstr)
             return make_unexpected(
-                std::system_error(std::make_error_code(std::errc::not_enough_memory)));
+                http::http_error("invalid listener URI: cannot transcode"));
+
+        auto r = _url_group.add_url(
+            *wstr, reinterpret_cast<HTTP_URL_CONTEXT>(lsnp.get()));
+        if (!r)
+            return make_unexpected(std::system_error(r.error()));
+
+        _listeners.push_back(std::move(lsnp));
 
         return {};
+    }
+
+    auto make_http_request(HTTP_REQUEST const *req)
+        -> expected<http::http_request, error>
+    {
+        auto raw_url_bytes = std::span<std::byte const>(
+            reinterpret_cast<std::byte const *>(req->CookedUrl.pFullUrl),
+            req->CookedUrl.FullUrlLength);
+
+        auto uri16str = bytes_to_string<u16string>(raw_url_bytes);
+        if (!uri16str)
+            return make_unexpected(
+                http::http_error("Invalid request URI: cannot decode bytes"));
+
+        auto uristr = transcode<u8string>(*uri16str);
+        if (!uristr)
+            return make_unexpected(
+                http::http_error("Invalid request URI: cannot transcode"));
+
+        log_trace("HTTP: Parse request URI [{}]",         
+            std::string_view(reinterpret_cast<char const *>(uristr->data()),
+                           uristr->size()));
+
+        auto uri = net::parse_uri(*uristr);
+        if (!uri)
+            return make_unexpected(
+                http::http_error("Invalid request URI: cannot parse"));
+
+        auto version = http::http_version(req->Version.MajorVersion,
+                                          req->Version.MinorVersion);
+
+        return http::http_request{
+            std::move(*uri), {}, {}, version, {}, {}};
+    }
+
+    auto httpsys_service::run() -> expected<void, error>
+    {
+        if (auto r = _url_group.set_request_queue(_request_queue); !r) {
+            return make_unexpected(http::http_error(
+                std::format("cannot add URL group to request queue: {}",
+                            r.error().message())));
+        }
+
+        for (;;) {
+            auto req = _request_queue.read_request();
+
+            if (!req)
+                return make_unexpected(req.error());
+
+            http::http_listener *lsnr =
+                reinterpret_cast<http::http_listener *>((*req)->UrlContext);
+
+            auto reqs = make_http_request(req->get());
+            if (!reqs) {
+                log_warning("HTTP: Failed to receive request: {}",
+                            reqs.error().what());
+                continue;
+            }
+
+            reqs->listener_address = lsnr->prefix;
+            httpsys_request_context ctx;
+            lsnr->handler(ctx, *reqs);
+        }
     }
 
 } // namespace ivy::win32

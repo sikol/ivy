@@ -393,7 +393,7 @@ namespace ivy {
         -> std::ostream &
     {
         using ascii_allocator =
-            std::allocator_traits<allocator>::template rebind_alloc<
+            typename std::allocator_traits<allocator>::template rebind_alloc<
                 typename ascii_encoding::char_type>;
 
         auto astr = transcode<basic_string<ascii_encoding, ascii_allocator>>(s);

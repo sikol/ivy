@@ -44,9 +44,9 @@ namespace ivy {
         }
     };
 
-    template <typename From,
-              typename To,
-              std::output_iterator<To> output_iterator>
+    template <typename from_type,
+              typename to_type,
+              std::output_iterator<to_type> output_iterator>
     class static_cast_iterator final {
         output_iterator out;
 
@@ -57,7 +57,12 @@ namespace ivy {
         using pointer = void;
         using reference = void;
 
-        static_cast_iterator(output_iterator out_) : out(out) {}
+        static_cast_iterator() = default;
+
+        static_cast_iterator(output_iterator out_)
+            : out(out_)
+        {
+        }
 
         auto operator*() const noexcept -> static_cast_iterator const &
         {
@@ -69,9 +74,9 @@ namespace ivy {
             return *this;
         }
 
-        auto operator=(From const &v) const noexcept -> void
+        auto operator=(from_type const &v) noexcept -> void
         {
-            *out++ = static_cast<To>(v);
+            *out++ = static_cast<to_type>(v);
         }
 
         auto operator++() noexcept -> static_cast_iterator &
@@ -84,6 +89,14 @@ namespace ivy {
             return *this;
         }
     };
+
+    template <typename from_type,
+              typename to_type,
+              std::output_iterator<from_type> iterator>
+    auto make_static_cast_iterator(iterator it)
+    {
+        return static_cast_iterator<from_type, to_type, iterator>(it);
+    }
 
 } // namespace ivy
 
