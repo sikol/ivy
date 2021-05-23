@@ -10,14 +10,15 @@
 #include <cstddef>
 
 #include <ivy/siphash.hxx>
+#include <ivy/static_vector.hxx>
 
 namespace ivy {
 
     namespace detail {
 
-        auto generate_sip_hash_key() -> std::span<std::byte const>;
+        auto generate_sip_hash_key() -> static_vector<std::byte, 16>;
 
-        auto get_sip_hash_key() -> std::span<std::byte const>;
+        auto get_sip_hash_key() -> static_vector<std::byte, 16> const &;
 
         inline auto hash_bytes(std::span<std::byte const> bytes) -> std::size_t
         {

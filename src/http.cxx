@@ -3,8 +3,8 @@
  * Distributed under the Boost Software License, Version 1.0.
  */
 
-#include <ivy/http/status.hxx>
 #include <ivy/http/service.hxx>
+#include <ivy/http/status.hxx>
 
 namespace ivy::http {
 
@@ -230,6 +230,129 @@ namespace ivy::http {
         return {c, http_errc_category()};
     }
 
+    service::service() noexcept = default;
+    service::~service() = default;
+
     http_header::http_header() = default;
 
-} // namespace ivy::http
+    http_header::http_header(http_header const &) = default;
+    http_header::http_header(http_header &&) noexcept = default;
+
+    http_header::~http_header() = default;
+
+    auto http_header::operator=(http_header const &) -> http_header & = default;
+    auto http_header::operator=(http_header &&) noexcept
+        -> http_header & = default;
+
+    auto http_header::get_field(astring const &name) -> header_field *
+    {
+        auto it = _fields.find(name);
+
+        if (it == _fields.end())
+            return nullptr;
+
+        return std::addressof(it->second);
+    }
+
+    auto http_header::get_field(astring const &name) const
+        -> header_field const *
+    {
+        return const_cast<http_header *>(this)->get_field(name);
+    }
+
+    auto http_header::add_field(header_field const &f) -> bool
+    {
+        auto [it, ok] = _fields.insert({f.name, f});
+        return ok;
+    }
+
+    auto http_header::add_or_replace_field(header_field const &f) -> bool
+    {
+        auto [it, ok] = _fields.insert_or_assign(f.name, f);
+        return !ok;
+    }
+
+    auto http_header::size() const noexcept -> size_type
+    {
+        return _fields.size();
+    }
+
+    auto http_header::begin() -> iterator
+    {
+        return iterator(_fields.begin());
+    }
+
+    auto http_header::begin() const -> const_iterator
+    {
+        return const_cast<http_header *>(this)->begin();
+    }
+
+    auto http_header::end() -> iterator
+    {
+        return iterator(_fields.end());
+    }
+
+    auto http_header::end() const -> const_iterator
+    {
+        return const_cast<http_header *>(this)->end();
+    }
+
+    auto http_header::find(key_type const &key) -> iterator {
+        return iterator(_fields.find(key));
+    }
+
+    auto http_header::find(key_type const &key) const -> const_iterator
+    {
+        return const_cast<http_header *>(this)->find(key);
+    }
+
+    auto http_header::erase(iterator const &it) -> iterator
+    {
+        return iterator(_fields.erase(it._iterator));
+    }
+
+    http_header_iterator::http_header_iterator(map_type::iterator iterator)
+        : _iterator(iterator)
+    {
+    }
+
+    http_header_iterator::http_header_iterator(http_header_iterator const &) =
+        default;
+    http_header_iterator::http_header_iterator(http_header_iterator &&) noexcept =
+        default;
+
+    auto http_header_iterator::operator=(http_header_iterator const &) 
+        -> http_header_iterator & = default;
+    auto http_header_iterator::operator=(http_header_iterator &&) noexcept
+        -> http_header_iterator & = default;
+
+        auto http_header_iterator::operator++() -> http_header_iterator &
+    {
+        ++_iterator;
+        return *this;
+    }
+
+    auto http_header_iterator::operator++(int) -> http_header_iterator
+    {
+        auto r(*this);
+        ++*this;
+        return r;
+    }
+
+    auto http_header_iterator::operator*() const -> header_field const &
+    {
+        return _iterator->second;
+    }
+
+    auto http_header_iterator::operator->() const -> header_field const *
+    {
+        return std::addressof(_iterator->second);
+    }
+
+    auto operator==(http_header_iterator const &a,
+                    http_header_iterator const &b) -> bool
+    {
+        return a._iterator == b._iterator;
+    }
+
+    } // namespace ivy::http

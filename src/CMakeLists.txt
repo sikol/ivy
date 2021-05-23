@@ -10,7 +10,10 @@ target_sources(ivy PRIVATE
     datum.cxx
     log.cxx
     charenc.cxx
-    http.cxx "hash.cxx")
+    http.cxx
+    hash.cxx
+    stringchannel.cxx
+    string.cxx)
     
 if(WIN32)
     target_sources(ivy PRIVATE 

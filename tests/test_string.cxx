@@ -80,4 +80,23 @@ TEST_CASE("ivy:u8string:substr", "[ivy][string][u8string]") {
     REQUIRE(s.substr(3, 3) == u8"bar");
     REQUIRE(s.substr(6, 4) == u8"quux");
     REQUIRE(s.substr(6, 32) == u8"quux");
+
+    REQUIRE(s.substr(0) == u8"foobarquux");
+    REQUIRE(s.substr(3) == u8"barquux");
+
+    ivy::u8string foo(u8"abc");
+    REQUIRE(foo.substr(0) == u8"abc");
+    REQUIRE(foo.substr(1) == u8"bc");
+    REQUIRE(foo.substr(2) == u8"c");
+    REQUIRE(foo.substr(3) == u8"");
+
+    REQUIRE(foo.substr(0, 10) == u8"abc");
+    REQUIRE(foo.substr(1, 10) == u8"bc");
+    REQUIRE(foo.substr(2, 10) == u8"c");
+    REQUIRE(foo.substr(3, 10) == u8"");
+
+    REQUIRE(foo.substr(0, 1) == u8"a");
+    REQUIRE(foo.substr(1, 1) == u8"b");
+    REQUIRE(foo.substr(2, 1) == u8"c");
+    REQUIRE(foo.substr(3, 1) == u8"");
 }

@@ -19,6 +19,7 @@
 
 #include <ivy/expected.hxx>
 #include <ivy/flagset.hxx>
+#include <ivy/string.hxx>
 
 namespace ivy::net {
 
@@ -63,25 +64,22 @@ namespace ivy::net {
      */
 
     struct uri_authority {
-        std::optional<std::string_view> username;
-        std::optional<std::string_view> password;
-        std::string_view hostname;
+        std::optional<ivy::u8string> username;
+        std::optional<ivy::u8string> password;
+        ivy::u8string hostname;
         std::optional<unsigned> port;
     };
 
     struct uri_path {
-        std::string_view path;
-        std::optional<std::string_view> query;
-        std::optional<std::string_view> fragment;
+        ivy::u8string path;
+        std::optional<ivy::u8string> query;
+        std::optional<ivy::u8string> fragment;
     };
 
     struct uri {
-        std::optional<std::string_view> scheme;
+        std::optional<ivy::u8string> scheme;
         std::optional<uri_authority> authority;
         std::optional<uri_path> path;
-
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
-        std::shared_ptr<char[]> original_data;
     };
 
     [[nodiscard]] auto is_absolute(uri const &u) -> bool;
@@ -100,12 +98,12 @@ namespace ivy::net {
     } // namespace uri_options
 
     [[nodiscard]] auto
-    parse_uri(std::string const &s,
+    parse_uri(ivy::u8string const &s,
               urioption::flagset options = uri_options::none) noexcept
         -> expected<uri, std::error_code>;
 
     auto operator<<(std::ostream &strm, uri const &uri) -> std::ostream &;
-    auto str(uri const &u) -> std::string;
+    auto str(uri const &u) -> ivy::u8string;
 
 } // namespace ivy::net
 

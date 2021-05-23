@@ -3,6 +3,8 @@
  * Distributed under the Boost Software License, Version 1.0.
  */
 
+#include <ivy/io/stringchannel.hxx>
+#include <ivy/io/textchannel.hxx>
 #include <ivy/net/uri.hxx>
 
 namespace ivy::net {
@@ -11,7 +13,7 @@ namespace ivy::net {
 
         auto uri_errc_category::name() const noexcept -> char const *
         {
-            return "sk:uri";
+            return "ivy:uri";
         }
 
         auto uri_errc_category::message(int c) const -> std::string
@@ -193,21 +195,25 @@ namespace ivy::net {
         };
         // clang-format on
 
-        [[nodiscard]] inline auto isc(int what, char c) noexcept -> bool
+        [[nodiscard]] auto isc(int what, char c) noexcept -> bool
         {
             return (chars[static_cast<unsigned char>(c)] & what) != 0;
         }
 
-        [[nodiscard]] inline auto span(std::string_view s, int what) noexcept
-            -> std::pair<std::string_view, std::string_view>
+        [[nodiscard]] auto span(u8string s, int what) noexcept
+            -> std::pair<u8string, u8string>
         {
             auto split = std::ranges::find_if_not(
                 s, [=](auto c) { return isc(what, c); });
-            return {{s.begin(), split}, {split, s.end()}};
+
+            if (split == s.end())
+                return {s, {}};
+            else
+                return {{s.begin(), split}, {split, s.end()}};
         }
 
-        [[nodiscard]] inline auto match_scheme(std::string_view s) noexcept
-            -> std::pair<std::optional<std::string_view>, std::string_view>
+        [[nodiscard]] auto match_scheme(u8string s) noexcept
+            -> std::pair<std::optional<u8string>, u8string>
         {
             auto [scheme, rest] = span(s, schemec);
 
@@ -217,13 +223,10 @@ namespace ivy::net {
             return {scheme, rest.substr(1)};
         }
 
-        [[nodiscard]] inline auto
-        match_username_password(std::string_view s) noexcept
-            -> std::tuple<std::optional<std::string_view>,
-                          std::optional<std::string_view>,
-                          std::string_view>
+        [[nodiscard]] auto match_username_password(u8string s) noexcept -> std::
+            tuple<std::optional<u8string>, std::optional<u8string>, u8string>
         {
-            std::string_view username, password, v;
+            u8string username, password, v;
             std::tie(username, v) = span(s, userc);
 
             if (username.empty() || v.empty())
@@ -244,15 +247,17 @@ namespace ivy::net {
             return {username, password, v.substr(1)};
         }
 
-        [[nodiscard]] inline auto match_number(std::string_view s) noexcept
-            -> std::pair<std::optional<unsigned>, std::string_view>
+        [[nodiscard]] auto match_number(u8string s) noexcept
+            -> std::pair<std::optional<unsigned>, u8string>
         {
             auto [istr, rest] = span(s, numc);
 
             if (istr.empty())
                 return {{}, s};
 
-            auto is = istr.data(), ilast = istr.data() + istr.size();
+            auto is = reinterpret_cast<char const *>(istr.data());
+            auto ilast =
+                reinterpret_cast<char const *>(istr.data()) + istr.size();
             unsigned i{};
             auto [p, ec] = std::from_chars(is, ilast, i);
             if (ec != std::errc() || p != ilast)
@@ -261,8 +266,8 @@ namespace ivy::net {
             return {i, rest};
         }
 
-        [[nodiscard]] inline auto match_ip6_host(std::string_view s) noexcept
-            -> std::pair<std::string_view, std::string_view>
+        [[nodiscard]] auto match_ip6_host(u8string s) noexcept
+            -> std::pair<u8string, u8string>
         {
             if (s.empty() || s[0] != '[')
                 return {{}, s};
@@ -274,15 +279,13 @@ namespace ivy::net {
             return {host, rest.substr(1)};
         }
 
-        [[nodiscard]] inline auto match_host(std::string_view s) noexcept
-            -> std::tuple<std::string_view,
-                          std::optional<unsigned>,
-                          std::string_view>
+        [[nodiscard]] auto match_host(u8string s) noexcept
+            -> std::tuple<u8string, std::optional<unsigned>, u8string>
         {
             if (s.empty())
                 return {{}, {}, s};
 
-            std::string_view host, rest;
+            u8string host, rest;
 
             std::tie(host, rest) = match_ip6_host(s);
             if (host.empty())
@@ -297,43 +300,43 @@ namespace ivy::net {
             return {host, port, rest_};
         }
 
-        [[nodiscard]] inline auto match_path_only(std::string_view s) noexcept
-            -> std::pair<std::optional<std::string_view>, std::string_view>
+        [[nodiscard]] auto match_path_only(u8string s) noexcept
+            -> std::pair<std::optional<u8string>, u8string>
         {
             if (s.empty() || s[0] != '/')
                 return {{}, s};
 
-            std::string_view path;
+            u8string path;
             std::tie(path, s) = span(s, pathc | highc);
             return {path, s};
         }
 
-        [[nodiscard]] inline auto match_path_query(std::string_view s) noexcept
-            -> std::pair<std::optional<std::string_view>, std::string_view>
+        [[nodiscard]] auto match_path_query(u8string s) noexcept
+            -> std::pair<std::optional<u8string>, u8string>
         {
             if (s.empty() || s[0] != '?')
                 return {{}, s};
 
-            std::string_view query;
+            u8string query;
             std::tie(query, s) = span(s.substr(1), queryc | highc);
             return {query, s};
         }
 
-        [[nodiscard]] inline auto match_path_frag(std::string_view s) noexcept
-            -> std::pair<std::optional<std::string_view>, std::string_view>
+        [[nodiscard]] auto match_path_frag(u8string s) noexcept
+            -> std::pair<std::optional<u8string>, u8string>
         {
             if (s.empty() || s[0] != '#')
                 return {{}, s};
 
-            std::string_view frag;
+            u8string frag;
             std::tie(frag, s) = span(s.substr(1), fragc | highc);
             return {frag, s};
         }
 
-        [[nodiscard]] inline auto match_path(std::string_view s) noexcept
-            -> std::pair<std::optional<uri_path>, std::string_view>
+        [[nodiscard]] auto match_path(u8string s) noexcept
+            -> std::pair<std::optional<uri_path>, u8string>
         {
-            std::optional<std::string_view> path_only;
+            std::optional<u8string> path_only;
             if (std::tie(path_only, s) = match_path_only(s);
                 !path_only.has_value())
                 return {{}, s};
@@ -345,10 +348,10 @@ namespace ivy::net {
             return {path, s};
         }
 
-        [[nodiscard]] inline auto match_authority(std::string_view s) noexcept
-            -> std::pair<std::optional<uri_authority>, std::string_view>
+        [[nodiscard]] auto match_authority(u8string s) noexcept
+            -> std::pair<std::optional<uri_authority>, u8string>
         {
-            if (s.size() < 2 || s.substr(0, 2) != "//")
+            if (s.size() < 2 || s.substr(0, 2) != u8"//")
                 return {{}, s};
 
             auto v = s.substr(2);
@@ -365,18 +368,21 @@ namespace ivy::net {
             return {auth, v};
         }
 
-        [[nodiscard]] inline auto dehex(char c) noexcept -> int
+        [[nodiscard]] auto dehex(char8_t c) noexcept -> int
         {
             if (c >= '0' && c <= '9')
                 return c - '0';
+
             if (c >= 'A' && c <= 'F')
                 return c - 'A' + 10;
+
             if (c >= 'a' && c <= 'f')
                 return c - 'a' + 10;
+
             return -1;
         }
 
-        [[nodiscard]] inline auto dehex(char const *p) noexcept -> int
+        [[nodiscard]] auto dehex(char8_t const *p) noexcept -> int
         {
             int a = dehex(*p), b = dehex(*(p + 1));
 
@@ -386,67 +392,55 @@ namespace ivy::net {
             return (a << 4) | b;
         }
 
-        [[nodiscard]] inline auto
-        decode_path(char *original_data, std::string_view *path_view) noexcept
-            -> bool
+        [[nodiscard]] auto decode_path(u8string path) -> std::optional<u8string>
         {
-            // URL-decode the path, without causing original_data to reallocate
-            // since that will invalidate all the string_views.
-
-            auto path_offset = path_view->data() - original_data;
-            auto original_length = path_view->size();
-            char *p = original_data + path_offset, *q = p, *start = p;
-            char *end = original_data + path_offset + original_length;
+            std::vector<std::byte> ret;
+            auto p = path.data();
+            auto end = path.data() + path.size();
 
             while (p < end) {
                 // URL-encoded URLs should not have high-bit characters.
-                if (*p < 0)
-                    return false;
+                if (*p > 0x7f)
+                    return {};
 
                 if (*p != '%') {
-                    *q++ = *p++;
+                    ret.push_back(static_cast<std::byte>(*p++));
                     continue;
                 }
 
                 p++;
                 if ((end - p) < 2)
-                    return false;
+                    return {};
 
                 int n = dehex(p);
                 if (n == -1)
-                    return false;
+                    return {};
 
-                *q++ = static_cast<char>(static_cast<unsigned char>(n));
+                ret.push_back(static_cast<std::byte>(n));
                 p += 2;
             }
 
-            *path_view = std::string_view(start, q);
-            return true;
+            auto rstr = bytes_to_string<u8string>(ret);
+
+            if (!rstr)
+                return {};
+
+            return *rstr;
         }
 
-        [[nodiscard]] inline auto raw_parse_uri(std::string const &s) noexcept
+        [[nodiscard]] auto raw_parse_uri(u8string const &s) noexcept
             -> expected<uri, std::error_code>
         {
             if (s.empty())
                 return make_unexpected(make_uri_error(uri_errors::no_data));
 
             uri ret;
-            auto len = s.size();
-            ret.original_data =
-                // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
-                std::shared_ptr<char[]>(new (std::nothrow) char[len]);
-            if (!ret.original_data)
-                return make_unexpected(
-                    std::make_error_code(std::errc::not_enough_memory));
+            u8string rest(s);
+            std::tie(ret.scheme, rest) = detail::match_scheme(rest);
+            std::tie(ret.authority, rest) = detail::match_authority(rest);
+            std::tie(ret.path, rest) = detail::match_path(rest);
 
-            std::ranges::copy(s, ret.original_data.get());
-
-            std::string_view v(ret.original_data.get(), len);
-            std::tie(ret.scheme, v) = detail::match_scheme(v);
-            std::tie(ret.authority, v) = detail::match_authority(v);
-            std::tie(ret.path, v) = detail::match_path(v);
-
-            if (!v.empty())
+            if (!rest.empty())
                 return make_unexpected(
                     make_uri_error(uri_errors::parse_failed));
 
@@ -481,7 +475,7 @@ namespace ivy::net {
         return u.authority.has_value() && !u.scheme.has_value();
     }
 
-    auto parse_uri(std::string const &s, urioption::flagset options) noexcept
+    auto parse_uri(u8string const &s, urioption::flagset options) noexcept
         -> expected<uri, std::error_code>
     {
         auto ret = detail::raw_parse_uri(s);
@@ -508,68 +502,80 @@ namespace ivy::net {
             return make_unexpected(make_uri_error(uri_errors::parse_failed));
 
         if (ret->path && !is_set(options, uri_options::skip_path_decode)) {
-            if (!detail::decode_path(ret->original_data.get(),
-                                     &ret->path->path))
+            auto dpath = detail::decode_path(ret->path->path);
+            if (!dpath)
                 return make_unexpected(
                     make_uri_error(uri_errors::invalid_encoding));
 
-            if (ret->path->query &&
-                !detail::decode_path(ret->original_data.get(),
-                                     std::addressof(*ret->path->query)))
-                return make_unexpected(
-                    make_uri_error(uri_errors::invalid_encoding));
+            ret->path->path = *dpath;
 
-            if (ret->path->fragment &&
-                !detail::decode_path(ret->original_data.get(),
-                                     std::addressof(*ret->path->fragment)))
-                return make_unexpected(
-                    make_uri_error(uri_errors::invalid_encoding));
+            if (ret->path->query) {
+                auto dquery = detail::decode_path(*ret->path->query);
+                if (!dquery)
+                    return make_unexpected(
+                        make_uri_error(uri_errors::invalid_encoding));
+
+                ret->path->query = *dquery;
+            }
+
+            if (ret->path->fragment) {
+                auto dfragment = detail::decode_path(*ret->path->fragment);
+                if (!dfragment)
+                    return make_unexpected(
+                        make_uri_error(uri_errors::invalid_encoding));
+
+                ret->path->fragment = *dfragment;
+            }
         }
 
         return ret;
     }
 
-    auto operator<<(std::ostream &strm, uri const &uri) -> std::ostream &
+    template <typename base_channel,
+              layer_ownership ownership>
+    auto operator<<(textchannel<base_channel, ownership> &strm, uri const &u)
+        -> textchannel<base_channel, ownership> &
     {
-        if (uri.scheme)
-            strm << *uri.scheme << ':';
+        if (u.scheme)
+            strm << *u.scheme << u8':';
 
-        if (uri.authority) {
-            strm << "//";
+        if (u.authority) {
+            strm << u8"//";
 
-            if (uri.authority->username) {
-                strm << *uri.authority->username;
-                if (uri.authority->password)
-                    strm << ":" << *uri.authority->password;
-                strm << "@";
+            if (u.authority->username) {
+                strm << *u.authority->username;
+                if (u.authority->password)
+                    strm << u8":" << *u.authority->password;
+                strm << u8"@";
             }
 
-            if (uri.authority->hostname.find(':') != std::string_view::npos)
-                strm << '[' << uri.authority->hostname << ']';
+            if (std::ranges::find(u.authority->hostname, ':') != u.authority->hostname.end())
+                strm << u8'[' << u.authority->hostname << u8']';
             else
-                strm << uri.authority->hostname;
+                strm << u.authority->hostname;
 
-            if (uri.authority->port)
-                strm << ":" << *uri.authority->port;
+            if (u.authority->port)
+                strm << u8":" << *u.authority->port;
         }
 
-        if (uri.path) {
-            strm << uri.path->path;
+        if (u.path) {
+            strm << u.path->path;
 
-            if (uri.path->query)
-                strm << "?" << *uri.path->query;
-            if (uri.path->fragment)
-                strm << "#" << *uri.path->fragment;
+            if (u.path->query)
+                strm << u8"?" << *u.path->query;
+            if (u.path->fragment)
+                strm << u8"#" << *u.path->fragment;
         }
 
         return strm;
     }
 
-    auto str(uri const &u) -> std::string
+    auto str(uri const &u) -> u8string
     {
-        std::ostringstream strm;
+        u8stringchannel chan;
+        auto strm = make_textchannel(chan);
         strm << u;
-        return strm.str();
+        return chan.str();
     }
 
 } // namespace ivy::net

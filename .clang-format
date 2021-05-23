@@ -12,12 +12,13 @@ BraceWrapping:
 BinPackParameters: false
 BinPackArguments: false
 FixNamespaceComments: true
+BreakConstructorInitializers: BeforeComma
 IncludeCategories:
   - Regex:      '^<sys/types.h>$'
     Priority:   1
   - Regex:      '^<sys/'
     Priority:   2
-  - Regex:      '^<sk/'
+  - Regex:      '^<ivy/'
     Priority:   4
   - Regex:      '.*'
     Priority:   3

@@ -6,13 +6,13 @@
 #ifndef IVY_CHARENC_UTF32_HXX_INCLUDED
 #define IVY_CHARENC_UTF32_HXX_INCLUDED
 
-#include <deque>
+#include <vector>
 #include <iterator>
 #include <ranges>
 #include <string>
 
-#include <ivy/charenc/error.hxx>
 #include <ivy/charenc.hxx>
+#include <ivy/charenc/error.hxx>
 #include <ivy/expected.hxx>
 #include <ivy/iterator.hxx>
 
@@ -35,7 +35,10 @@ namespace ivy {
         unsigned _bufp = 0;
 
     public:
-        charconv(charconv_options options) noexcept : _options(options) {}
+        charconv(charconv_options options = {}) noexcept
+            : _options(options)
+        {
+        }
 
         template <std::ranges::input_range input_range,
                   std::output_iterator<char32_t> output_iterator>
@@ -75,6 +78,38 @@ namespace ivy {
 
             null_output_iterator nout;
             _charconv.flush(nout);
+        }
+    };
+
+    template <character_encoding source_encoding,
+              character_encoding target_encoding>
+    class charconv<source_encoding, target_encoding> {
+        charconv<source_encoding, utf32_encoding> _sourceconv;
+        charconv<utf32_encoding, target_encoding> _targetconv;
+
+    public:
+        charconv(charconv_options options = {}) noexcept
+            : _sourceconv(options)
+            , _targetconv(options)
+        {
+        }
+
+        template <std::ranges::input_range input_range,
+                  std::output_iterator<typename target_encoding::char_type>
+                      output_iterator>
+        auto convert(input_range &&r, output_iterator &&out) -> void
+        {
+            std::vector<char32_t> c32;
+            _sourceconv.convert(r, std::back_inserter(c32));
+            _targetconv.convert(c32, out);
+        }
+
+        template <std::output_iterator<char32_t> output_iterator>
+        auto flush(output_iterator &&out) -> void
+        {
+            std::vector<char32_t> c32;
+            _sourceconv.flush(std::back_inserter(c32));
+            _targetconv.convert(c32, out);
         }
     };
 

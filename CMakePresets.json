@@ -30,8 +30,8 @@
         "CMAKE_CXX_FLAGS": "/FC /W4 /WX /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl /EHsc /permissive- /Zc:preprocessor /Zc:inline /Zc:externConstexpr /Zc:__cplusplus",
         "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
-        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD",
-        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD"
+        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /MD",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /MD"
       }
     },
     {
@@ -44,8 +44,8 @@
         "CMAKE_CXX_FLAGS": "-fsanitize=address /FC /W4 /WX /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl /EHsc /permissive- /Zc:preprocessor /Zc:inline /Zc:externConstexpr /Zc:__cplusplus",
         "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
-        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD",
-        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD"
+        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /MD",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /MD"
       }
     },
     {
@@ -58,8 +58,8 @@
         "CMAKE_CXX_FLAGS": "-fdiagnostics-absolute-paths /W4 /WX /utf-8 /sdl /EHsc /permissive- /Zc:inline /Zc:__cplusplus",
         "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
-        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD",
-        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /Zi /MD"
+        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /MD",
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /MD"
       }
     },
     {

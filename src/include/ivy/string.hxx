@@ -9,50 +9,58 @@
 #include <atomic>
 #include <bit>
 #include <compare>
+#include <iostream>
 #include <ranges>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
 
 #include <ivy/charenc.hxx>
+#include <ivy/charenc/ascii.hxx>
 #include <ivy/charenc/system_wide.hxx>
 #include <ivy/charenc/utf16.hxx>
 #include <ivy/charenc/utf32.hxx>
 #include <ivy/charenc/utf8.hxx>
-#include <ivy/charenc/ascii.hxx>
-#include <ivy/hash.hxx>
 #include <ivy/expected.hxx>
+#include <ivy/hash.hxx>
 
 namespace ivy {
 
     namespace detail {
 
-        template <character_encoding Encoding, typename Alloc>
+        template <character_encoding encoding, typename allocator>
         struct string_storage {
-            using char_type = typename Encoding::char_type;
+            using char_type = typename encoding::char_type;
 
-            std::vector<char_type, Alloc> data;
+            std::vector<char_type, allocator> data;
 
             string_storage() = default;
 
-            string_storage(std::vector<char_type, Alloc> &&vec)
+            string_storage(std::vector<char_type, allocator> &&vec)
                 : data(std::move(vec))
             {
-                data.push_back(typename Encoding::char_type(0));
+                data.push_back(typename encoding::char_type(0));
             }
 
             template <std::ranges::range R>
             string_storage(R &&r)
                 : data(std::ranges::begin(r), std::ranges::end(r))
             {
-                data.push_back(typename Encoding::char_type(0));
+                data.push_back(typename encoding::char_type(0));
+            }
+
+            template <std::input_iterator iterator>
+            string_storage(iterator begin, iterator end)
+                : data(begin, end)
+            {
+                data.push_back(typename encoding::char_type(0));
             }
         };
 
     } // namespace detail
 
     template <character_encoding Encoding,
-              typename Alloc = std::allocator<typename Encoding::char_type>>
+              typename allocator = std::allocator<typename Encoding::char_type>>
     class basic_string {
     public:
         using encoding_type = Encoding;
@@ -66,10 +74,12 @@ namespace ivy {
         using iterator = const_pointer;
         using const_iterator = const_pointer;
 
+        inline static size_type npos = static_cast<size_type>(-1);
+
     private:
-        using storage_type = detail::string_storage<Encoding, Alloc>;
+        using storage_type = detail::string_storage<Encoding, allocator>;
         mutable std::shared_ptr<storage_type> _storage;
-        size_type _start = 0;
+        mutable size_type _start = 0;
         size_type _len = 0;
 
         auto _rematerialize() const -> void;
@@ -80,7 +90,8 @@ namespace ivy {
         basic_string(basic_string &&other) noexcept;
         basic_string(value_type const *);
         basic_string(value_type const *, size_type size);
-        basic_string(std::vector<value_type, Alloc> &&vec);
+        basic_string(const_iterator begin, const_iterator end);
+        basic_string(std::vector<value_type, allocator> &&vec);
 
         auto operator=(basic_string const &other) -> basic_string &;
         auto operator=(basic_string &&other) noexcept -> basic_string &;
@@ -88,11 +99,12 @@ namespace ivy {
         auto at(size_type i) const -> value_type;
         auto operator[](size_type i) const noexcept -> value_type;
 
+        auto empty() const noexcept -> bool;
         auto size() const noexcept -> size_type;
         auto data() const noexcept -> const_pointer;
         auto c_str() const noexcept -> const_pointer;
 
-        auto substr(size_type begin, size_type len) const noexcept
+        auto substr(size_type begin = 0u, size_type len = npos) const noexcept
             -> basic_string;
 
         auto begin() const noexcept -> const_iterator;
@@ -119,8 +131,18 @@ namespace ivy {
     template <character_encoding Encoding, typename Alloc>
     basic_string<Encoding, Alloc>::basic_string(value_type const *s,
                                                 size_type len)
-        : _storage(std::make_shared<storage_type>(std::span(s, s + len))),
-          _start(0), _len(len)
+        : _storage(std::make_shared<storage_type>(std::span(s, s + len)))
+        , _start(0)
+        , _len(len)
+    {
+    }
+
+    template <character_encoding Encoding, typename Alloc>
+    basic_string<Encoding, Alloc>::basic_string(const_iterator begin,
+                                                const_iterator end)
+        : _storage(std::make_shared<storage_type>(begin, end))
+        , _start(0)
+        , _len(_storage->data.size() - 1)
     {
     }
 
@@ -133,8 +155,9 @@ namespace ivy {
     template <character_encoding Encoding, typename Alloc>
     basic_string<Encoding, Alloc>::basic_string(
         std::vector<value_type, Alloc> &&vec)
-        : _storage(std::make_shared<storage_type>(std::move(vec))), _start(0),
-          _len(_storage->data.size() - 1)
+        : _storage(std::make_shared<storage_type>(std::move(vec)))
+        , _start(0)
+        , _len(_storage->data.size() - 1)
     {
     }
 
@@ -177,6 +200,7 @@ namespace ivy {
     {
         _storage =
             std::make_shared<storage_type>(std::span(data(), data() + size()));
+        _start = 0;
     }
 
     template <character_encoding Encoding, typename Alloc>
@@ -186,6 +210,12 @@ namespace ivy {
             throw std::out_of_range("string index out of range");
 
         return _storage->data[_start + i];
+    }
+
+    template <character_encoding Encoding, typename Alloc>
+    auto basic_string<Encoding, Alloc>::empty() const noexcept -> bool
+    {
+        return _len == 0;
     }
 
     template <character_encoding Encoding, typename Alloc>
@@ -216,16 +246,22 @@ namespace ivy {
     {
         auto ret(*this);
 
-        IVY_CHECK(_start + begin < size(),
+        IVY_CHECK(begin <= size(),
                   "ivy::basic_string::substr: start out of range");
 
-        if (begin >= size())
-            begin = size() - 1;
-        if (begin + len > size())
-            len = size() - begin;
+        if (begin >= size()) {
+            ret._start = 0;
+            ret._len = 0;
+        } else {
+            if (len == npos)
+                len = size() - begin;
 
-        ret._start += begin;
-        ret._len = len;
+            if (begin + len > size())
+                len = size() - begin;
+
+            ret._start += begin;
+            ret._len = len;
+        }
 
         return ret;
     }
@@ -291,17 +327,16 @@ namespace ivy {
         return basic_string<Encoding, Alloc>(std::move(chars));
     }
 
-    template <typename Target,
-              character_encoding SourceEncoding,
-              typename Alloc>
-    auto transcode(basic_string<SourceEncoding, Alloc> const &s)
-        -> expected<Target, std::error_code>
+    template <typename target_string,
+              character_encoding source_encoding,
+              typename allocator>
+    auto transcode(basic_string<source_encoding, allocator> const &s)
+        -> expected<target_string, std::error_code>
     {
-        using TargetEncoding = typename Target::encoding_type;
+        using target_encoding = typename target_string::encoding_type;
+        std::vector<typename target_encoding::char_type> chars;
 
-        std::vector<typename TargetEncoding::char_type> chars;
-
-        charconv<SourceEncoding, TargetEncoding> cc;
+        charconv<source_encoding, target_encoding> cc;
         try {
             cc.convert(s, std::back_inserter(chars));
             cc.flush(std::back_inserter(chars));
@@ -310,7 +345,7 @@ namespace ivy {
                 make_error_code(charenc_errc::invalid_encoding));
         }
 
-        return Target(&chars[0], chars.size());
+        return target_string(&chars[0], chars.size());
     }
 
     template <typename Target, std::ranges::range Range>
@@ -335,7 +370,7 @@ namespace ivy {
 
     template <typename encoding, typename alloc>
     struct hash<basic_string<encoding, alloc>> {
-        auto operator()(basic_string<encoding, alloc> &v) const noexcept
+        auto operator()(basic_string<encoding, alloc> const &v) const noexcept
             -> std::size_t
         {
             auto bytes = as_bytes(std::span(v.data(), v.size()));
@@ -343,15 +378,49 @@ namespace ivy {
         }
     };
 
+    template <character_encoding encoding, typename allocator>
+    auto operator<<(std::basic_ostream<typename encoding::char_type> &strm,
+                    basic_string<encoding, allocator> const &s)
+        -> std::basic_ostream<typename encoding::char_type> &
+    {
+        strm.write(s.data(), s.size());
+        return strm;
+    }
+
+    template <character_encoding encoding, typename allocator>
+    auto operator<<(std::ostream &strm,
+                    basic_string<encoding, allocator> const &s)
+        -> std::ostream &
+    {
+        using ascii_allocator =
+            std::allocator_traits<allocator>::template rebind_alloc<
+                typename ascii_encoding::char_type>;
+
+        auto astr = transcode<basic_string<ascii_encoding, ascii_allocator>>(s);
+
+        if (astr)
+            strm.write(astr->data(), astr->size());
+
+        return strm;
+    }
+
+    extern template class basic_string<utf8_encoding>;
+    extern template class basic_string<utf16_encoding>;
+    extern template class basic_string<utf32_encoding>;
+    extern template class basic_string<ascii_encoding>;
+    extern template class basic_string<system_wide_encoding>;
+
 } // namespace ivy
 
 namespace std {
 
     template <typename encoding, typename alloc>
     struct hash<ivy::basic_string<encoding, alloc>> {
-        std::size_t operator()(ivy::basic_string<encoding, alloc> &v) const noexcept
+        auto
+        operator()(ivy::basic_string<encoding, alloc> const &v) const noexcept
+            -> size_t
         {
-            return ivy::hash<ivy::basic_string<encoding, alloc>>{}();
+            return ivy::hash<ivy::basic_string<encoding, alloc>>{}(v);
         }
     };
 
