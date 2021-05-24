@@ -8,6 +8,7 @@
 #include <ivy/win32/error.hxx>
 #include <ivy/win32/httpsys/request_context.hxx>
 #include <ivy/win32/httpsys/request_controller.hxx>
+#include <ivy/win32/httpsys/response.hxx>
 #include <ivy/win32/httpsys/service.hxx>
 
 namespace ivy::win32::httpsys {
@@ -69,10 +70,10 @@ namespace ivy::win32::httpsys {
         reqs->listener_address = lsnr->prefix;
 
         request_context ctx;
-        http::http_response response;
+        http::http_response resp;
 
         try {
-            response = lsnr->handler(ctx, *reqs);
+            resp = lsnr->handler(ctx, *reqs);
         } catch (...) {
             log_warning("HTTP: Failed to handle request: unexpected exception "
                         "from handler");
@@ -80,9 +81,9 @@ namespace ivy::win32::httpsys {
             return;
         }
 
-        if (auto r = send_response(*reqs, response); !r) {
+        if (auto r = send_response(*reqs, resp); !r) {
             log_warning(std::format("HTTP: Failed to send response: {}",
-                                    r.error().message()));
+                                    r.error().what()));
         }
     }
 
@@ -104,8 +105,8 @@ namespace ivy::win32::httpsys {
     }
 
     auto request_controller::send_response(http::http_request &req,
-                                        http::http_response &resp) noexcept
-        -> expected<void, std::error_code>
+                                           http::http_response &resp) noexcept
+        -> expected<void, error>
     {
         bool has_body = !!resp.body;
         bool chunked_response = has_body && can_chunk_response(req);
@@ -114,15 +115,20 @@ namespace ivy::win32::httpsys {
             resp.header.add_or_replace_field(
                 {"transfer-encoding", u8"chunked"});
 
-        HTTP_RESPONSE response{};
+        response httpsys_response(static_cast<short>(resp.status_code));
 
-        response.Version = HTTP_VERSION_1_1;
-        response.StatusCode = static_cast<short>(resp.status_code);
+        for (auto &&field : resp.header) {
+            httpsys_response.add_header(field.name, field.value);
+        }
 
         if (auto r = _writer.start_response(
-                &response, {.has_body = has_body, .chunked = chunked_response});
-            !r)
-            return make_unexpected(r.error());
+                const_cast<HTTP_RESPONSE *>(httpsys_response.get_value()),
+                {.has_body = has_body, .chunked = chunked_response});
+            !r) {
+
+            return make_unexpected(http::http_error(std::format(
+                "failed to start response: {}", r.error().message())));
+        }
 
         if (has_body) {
             std::byte buf[1024]{};
@@ -133,7 +139,9 @@ namespace ivy::win32::httpsys {
                 if (!nread) {
                     if (nread.error() != errc::end_of_file) {
                         // Do not call finish_response here() so we abort.
-                        return make_unexpected(nread.error());
+                        return make_unexpected(http::http_error(
+                            std::format("failed to read request body: {}",
+                                        nread.error().message())));
                     }
 
                     break;
@@ -141,13 +149,16 @@ namespace ivy::win32::httpsys {
 
                 if (auto r =
                         _writer.write_data(std::span(buf).subspan(0, *nread));
-                    !r)
-                    return make_unexpected(r.error());
+                    !r) {
+                    return make_unexpected(http::http_error(std::format(
+                        "failed to write response body: {}", r.error().message())));
+                }
             }
         }
 
         if (auto r = _writer.finish_response(); !r)
-            return make_unexpected(r.error());
+            return make_unexpected(http::http_error(std::format(
+                "failed to finish response: {}", r.error().message())));
 
         return {};
     }

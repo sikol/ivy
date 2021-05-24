@@ -35,7 +35,7 @@ namespace ivy::win32::httpsys {
 
         [[nodiscard]] auto send_response(http::http_request &req,
                                          http::http_response &resp) noexcept
-            -> expected<void, std::error_code>;
+            -> expected<void, error>;
 
     public:
         request_controller(service *service,

@@ -46,11 +46,15 @@ namespace ivy::win32::httpsys {
         }
     }
 
-    auto response_writer::start_response(HTTP_RESPONSE *response,
+    auto response_writer::start_response(HTTP_RESPONSE const *response,
                                          response_configuration config) noexcept
         -> expected<void, std::error_code>
     {
         _config = config;
+
+        if (_state != s_initial)
+            return make_unexpected(
+                make_error_code(std::errc::invalid_argument));
 
         ULONG flags = 0;
         ULONG bytes_sent{};
@@ -62,7 +66,7 @@ namespace ivy::win32::httpsys {
             ::HttpSendHttpResponse(_request_queue->get_handle(),
                                    _request_id,
                                    flags,
-                                   response,
+                                   const_cast<HTTP_RESPONSE *>(response),
                                    nullptr,
                                    &bytes_sent,
                                    nullptr,
@@ -93,13 +97,13 @@ namespace ivy::win32::httpsys {
 
         USHORT nchunks{};
         char chunk_prefix[std::numeric_limits<io_size_t>::digits10 + 3]{};
-        HTTP_DATA_CHUNK chunks[2]{};
+        HTTP_DATA_CHUNK chunks[3]{};
 
         if (data.size() > std::numeric_limits<ULONG>::max())
             return make_unexpected(make_error_code(std::errc::value_too_large));
 
         if (_config.chunked) {
-            nchunks = 2;
+            nchunks = 3;
 
             auto tcr = std::to_chars(std::ranges::begin(chunk_prefix),
                                      std::ranges::end(chunk_prefix),
@@ -120,6 +124,10 @@ namespace ivy::win32::httpsys {
             chunks[1].DataChunkType = HttpDataChunkFromMemory;
             chunks[1].FromMemory.pBuffer = const_cast<std::byte *>(data.data());
             chunks[1].FromMemory.BufferLength = static_cast<ULONG>(data.size());
+
+            chunks[2].DataChunkType = HttpDataChunkFromMemory;
+            chunks[2].FromMemory.pBuffer = const_cast<char *>("\r\n");
+            chunks[2].FromMemory.BufferLength = 2;
         } else {
             nchunks = 1;
 

@@ -28,7 +28,8 @@ if(WIN32)
         win32/httpsys/request_controller.cxx
         win32/httpsys/service.cxx
         win32/httpsys/response_writer.cxx
-        )
+        win32/httpsys/response.cxx
+        win32/httpsys/header.cxx)
 
     target_link_libraries(ivy PUBLIC bcrypt httpapi WIL)
 endif()

@@ -59,7 +59,7 @@ namespace ivy::win32::httpsys {
         response_writer(response_writer &&) noexcept;
         auto operator=(response_writer &&) -> response_writer & = delete;
 
-        auto start_response(HTTP_RESPONSE *, response_configuration) noexcept
+        auto start_response(HTTP_RESPONSE const *, response_configuration) noexcept
             -> expected<void, std::error_code>;
 
         auto write_data(std::span<std::byte const>) noexcept
