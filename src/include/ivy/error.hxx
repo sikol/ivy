@@ -10,13 +10,51 @@
 #include <exception>
 #include <memory>
 #include <type_traits>
+#include <system_error>
 
 namespace ivy {
 
-    // clang-format off
-	template<typename T>
-	concept error_type = std::derived_from<T, std::exception>;
-    // clang-format on
+    enum struct errc : unsigned {
+        no_error = 0,
+
+        // Source character cannot be represented in target character set
+        unrepresentable_character = 1,
+
+        // Source codepoint cannot be represented in target encoding
+        unrepresentable_codepoint = 2,
+
+        // Source encoding is invalid
+        invalid_encoding = 3,
+
+        end_of_file = 4,
+    };
+
+}
+
+namespace std {
+
+    template <>
+    struct is_error_code_enum<ivy::errc> : true_type {
+    };
+
+} // namespace std
+
+namespace ivy {
+
+    namespace detail {
+
+        struct errc_category : std::error_category {
+            auto name() const noexcept -> char const * final;
+            auto message(int c) const -> std::string final;
+        };
+
+    } // namespace detail
+
+    auto errc_category() -> detail::errc_category const &;
+    auto make_error_code(errc e) -> std::error_code;
+
+    template <typename T>
+    concept error_type = std::derived_from<T, std::exception>;
 
     /*
      * 'error' stores an std::exception as an error value which can be
@@ -80,6 +118,6 @@ namespace ivy {
         std::shared_ptr<std::exception> exception_ptr;
     };
 
-} // namespace sk
+} // namespace ivy
 
 #endif // IVY_ERROR_HXX_INCLUDED

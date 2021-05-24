@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <type_traits>
+#include <span>
 
 namespace ivy {
 
@@ -35,8 +36,46 @@ namespace ivy {
     };
 
     template <typename source_encoding,
-              character_encoding target_encoding>
+              typename target_encoding>
     class charconv;
+
+    template<typename encoding>
+    struct encoding_traits {
+        using char_type = typename encoding::char_type;
+    };
+
+    template<>
+    struct encoding_traits<std::byte> {
+        using char_type = std::byte;
+    };
+
+    template<typename T>
+    using encoding_char_type = typename encoding_traits<T>::char_type;
+
+    template <character_encoding source_encoding>
+    class charconv<source_encoding, std::byte> {
+        charconv_options _options;
+
+    public:
+        charconv(charconv_options options = {}) noexcept
+            : _options(options)
+        {
+        }
+
+        template <std::ranges::input_range input_range,
+                  std::output_iterator<std::byte> output_iterator>
+        auto convert(input_range &&r, output_iterator &&out) -> void
+        {
+            for (auto &&b : r) {
+                std::ranges::copy(as_bytes(std::span(&b, 1)), out);
+            }
+        }
+
+        template <std::output_iterator<char32_t> output_iterator>
+        auto flush(output_iterator &&) -> void
+        {
+        }
+    };
 
 } // namespace ivy
 

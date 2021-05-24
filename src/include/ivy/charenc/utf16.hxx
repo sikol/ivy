@@ -14,7 +14,7 @@
 #include <string>
 #include <type_traits>
 
-#include <ivy/charenc/error.hxx>
+#include <ivy/error.hxx>
 #include <ivy/charenc/utf32.hxx>
 #include <ivy/expected.hxx>
 #include <ivy/iterator.hxx>

@@ -342,7 +342,7 @@ namespace ivy {
             cc.flush(std::back_inserter(chars));
         } catch (encoding_error const &) {
             return make_unexpected(
-                make_error_code(charenc_errc::invalid_encoding));
+                make_error_code(errc::invalid_encoding));
         }
 
         return target_string(&chars[0], chars.size());
@@ -362,10 +362,13 @@ namespace ivy {
             tx.convert(r, std::back_inserter(chars));
             tx.flush(std::back_inserter(chars));
         } catch (encoding_error const &) {
-            return make_unexpected(charenc_errc::invalid_encoding);
+            return make_unexpected(errc::invalid_encoding);
         }
 
-        return Target(&chars[0], chars.size());
+        if (chars.empty())
+            return Target();
+
+        return Target(&chars[0], &chars[0] + chars.size());
     }
 
     template <typename encoding, typename alloc>

@@ -14,7 +14,11 @@
 #include <ivy/error.hxx>
 #include <ivy/http/header.hxx>
 #include <ivy/http/method.hxx>
+#include <ivy/http/response.hxx>
+#include <ivy/http/status.hxx>
 #include <ivy/http/version.hxx>
+#include <ivy/http/request.hxx>
+#include <ivy/io/pmrchannel.hxx>
 #include <ivy/net/uri.hxx>
 #include <ivy/noncopyable.hxx>
 #include <ivy/string.hxx>
@@ -23,17 +27,10 @@ namespace ivy::http {
 
     class http_error : public std::runtime_error {
     public:
-        http_error(std::string const &err) : std::runtime_error(err) {}
-    };
-
-    struct http_request {
-        net::uri uri;
-        net::uri listener_address;
-        net::uri request_path;
-
-        http_version version;
-        http_method method;
-        http_header header;
+        http_error(std::string const &err)
+            : std::runtime_error(err)
+        {
+        }
     };
 
     class request_context {
@@ -44,7 +41,7 @@ namespace ivy::http {
 
     struct http_listener {
         net::uri prefix;
-        std::function<void(request_context &, http_request const &)> handler;
+        std::function<http_response (request_context &, http_request const &)> handler;
     };
 
     class service : public ivy::noncopyable {

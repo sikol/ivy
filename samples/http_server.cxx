@@ -11,12 +11,15 @@
 namespace {
 
     auto handle_request(ivy::http::request_context &,
-                        ivy::http::http_request const &req) -> void
+                        ivy::http::http_request const &req)
+        -> ivy::http::http_response
     {
         auto uri = str(req.uri);
         std::string_view u(reinterpret_cast<char const *>(uri.data()),
                            uri.size());
         ivy::log_info(std::format("Received request, uri = [{}].", u));
+
+        return ivy::http::make_http_response(200, u8"Hello, world.\r\n");
     }
 
 } // namespace

@@ -355,4 +355,9 @@ namespace ivy::http {
         return a._iterator == b._iterator;
     }
 
+    auto can_chunk_response(http_request const &req) noexcept -> bool
+    {
+        return req.version >= http_version(1, 1);
+    }
+
     } // namespace ivy::http

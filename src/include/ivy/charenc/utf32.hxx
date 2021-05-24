@@ -12,7 +12,7 @@
 #include <string>
 
 #include <ivy/charenc.hxx>
-#include <ivy/charenc/error.hxx>
+#include <ivy/error.hxx>
 #include <ivy/expected.hxx>
 #include <ivy/iterator.hxx>
 

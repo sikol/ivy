@@ -6,8 +6,8 @@
 #ifndef IVY_IO_TEXTCHANNEL_HXX_INCLUDED
 #define IVY_IO_TEXTCHANNEL_HXX_INCLUDED
 
-#include <system_error>
 #include <span>
+#include <system_error>
 
 #include <ivy/charenc.hxx>
 #include <ivy/expected.hxx>
@@ -20,13 +20,6 @@ namespace ivy {
     class textchannel final : layer_base<base_channel, ownership> {
     private:
         std::error_code _error;
-
-    protected:
-        friend auto make_textchannel(base_channel &)
-            -> textchannel<base_channel, layer_ownership::borrow_layer>;
-
-        friend auto make_textchannel(base_channel &&)
-            -> textchannel<base_channel, layer_ownership::own_layer>;
 
     public:
         using value_type = typename base_channel::value_type;
@@ -46,7 +39,7 @@ namespace ivy {
 
         textchannel(base_channel &&c) requires(ownership ==
                                                layer_ownership::own_layer)
-            : layer_base(std::move(c))
+            : layer_base<base_channel, ownership>(std::move(c))
         {
         }
 

@@ -3,16 +3,20 @@
  * Distributed under the Boost Software License, Version 1.0.
  */
 
-#ifndef IVY_WIN32_HTTPSYS_HANDLE_HXX_INCLUDED
-#define IVY_WIN32_HTTPSYS_HANDLE_HXX_INCLUDED
+#ifndef IVY_WIN32_HTTPSYS_INITIALISE_HANDLE_HXX_INCLUDED
+#define IVY_WIN32_HTTPSYS_INITIALISE_HANDLE_HXX_INCLUDED
 
 #include <utility>
 
-namespace ivy::win32 {
+#include <ivy/win32/windows.hxx>
+
+#include <ivy/noncopyable.hxx>
+
+namespace ivy::win32::httpsys {
 
     /*************************************************************************
      *
-     * http_handle.
+     * initialise_handle.
      *
      * When http_handle is initialised with a "flags" value, it calls
      * HttpInitialise().  Destructing the handle calls HttpTerminate().  The
@@ -25,19 +29,20 @@ namespace ivy::win32 {
      * http_handle::http_handle() throws http_error if HttpInitialise() fails.
      */
 
-    class http_handle : public ivy::noncopyable {
+    class initialise_handle : public ivy::noncopyable {
         ULONG _flags{};
 
     private:
     public:
-        http_handle();
-        http_handle(ULONG flags);
-        http_handle(http_handle &&other) noexcept;
-        ~http_handle();
+        initialise_handle();
+        initialise_handle(ULONG flags);
+        initialise_handle(initialise_handle &&other) noexcept;
+        ~initialise_handle();
 
-        auto operator=(http_handle &&other) noexcept -> http_handle &;
+        auto operator=(initialise_handle &&other) noexcept
+            -> initialise_handle &;
     };
 
 } // namespace ivy::win32
 
-#endif // IVY_WIN32_HTTPSYS_HANDLE_HXX_INCLUDED
+#endif // IVY_WIN32_HTTPSYS_INITIALISE_HANDLE_HXX_INCLUDED

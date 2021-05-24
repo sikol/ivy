@@ -6,14 +6,18 @@
 #ifndef IVY_WIN32_HTTPSYS_REQUEST_QUEUE_HXX_INCLUDED
 #define IVY_WIN32_HTTPSYS_REQUEST_QUEUE_HXX_INCLUDED
 
+#include <optional>
+
 #include <ivy/noncopyable.hxx>
 #include <ivy/win32/windows.hxx>
+#include <ivy/win32/heap.hxx>
+#include <ivy/string.hxx>
 
 #include <http.h>
 
 #include <wil/resource.h>
 
-namespace ivy::win32 {
+namespace ivy::win32::httpsys {
 
     /*************************************************************************
      *
@@ -21,48 +25,36 @@ namespace ivy::win32 {
      *
      * Represents a request queue in the HTTP API.  Creating a request_queue
      * object calls HttpCreateRequestQueue().  Closing a request_queue calls
-     * HttpCloseRequestQueue().  Dereferencing the request queue returns the
-     * wil::unique_any representing the request queue's handle.
+     * HttpCloseRequestQueue().  
      *
      * http_request_queue's constructor can throw http_error if
      * HttpCreateRequestQueue fails.
      */
 
     // Unique handle for a request queue.
-    using unique_http_request_queue =
-        wil::unique_any<HANDLE,
-                        decltype(::HttpCloseRequestQueue),
-                        ::HttpCloseRequestQueue>;
 
-    namespace detail {
+    using unique_http_request =
+        std::unique_ptr<HTTP_REQUEST, process_heap_deleter<HTTP_REQUEST>>;
 
-        template <typename T>
-        struct process_heap_free {
-            auto operator()(T *p) const noexcept -> void
-            {
-                ::HeapFree(::GetProcessHeap(), 0, p);
-            }
-        };
+    class request_queue : public ivy::noncopyable {
+        using handle_type =
+            wil::unique_any<HANDLE,
+                            decltype(::HttpCloseRequestQueue),
+                            ::HttpCloseRequestQueue>;
 
-    } // namespace detail
-
-    using http_request_pointer =
-        std::unique_ptr<HTTP_REQUEST, detail::process_heap_free<HTTP_REQUEST>>;
-
-    class http_request_queue : public ivy::noncopyable {
-        unique_http_request_queue _handle{};
+        handle_type _handle{};
 
     public:
-        http_request_queue(std::optional<wstring> name,
+        request_queue(std::optional<wstring> name,
                            SECURITY_ATTRIBUTES *security_attributes,
                            ULONG flags);
-        ~http_request_queue();
+        ~request_queue();
 
-        http_request_queue(http_request_queue &&) noexcept;
-        auto operator=(http_request_queue &&) noexcept -> http_request_queue &;
+        request_queue(request_queue &&) noexcept;
+        auto operator=(request_queue &&) noexcept -> request_queue &;
 
-        auto read_request() -> expected<http_request_pointer, error>;
-        auto get_handle() -> HANDLE;
+        [[nodiscard]] auto read_request() -> expected<unique_http_request, error>;
+        [[nodiscard]] auto get_handle() -> HANDLE;
     };
 
 } // namespace ivy::win32

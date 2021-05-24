@@ -68,6 +68,10 @@ namespace ivy {
         -> expected<io_size_t, std::error_code>
     {
         auto readable = std::span(_buffer.begin() + _readp, _buffer.end());
+
+        if (readable.size() == 0)
+            return make_unexpected(make_error_code(errc::end_of_file));
+
         if (readable.size() > data.size())
             readable = readable.subspan(0, data.size());
 

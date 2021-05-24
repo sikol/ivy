@@ -9,11 +9,11 @@ target_sources(ivy PRIVATE
     uri.cxx
     datum.cxx
     log.cxx
-    charenc.cxx
     http.cxx
     hash.cxx
     stringchannel.cxx
-    string.cxx)
+    string.cxx
+    error.cxx)
     
 if(WIN32)
     target_sources(ivy PRIVATE 
@@ -21,7 +21,14 @@ if(WIN32)
         win32/error.cxx 
         win32/bcrypt.cxx
         win32/registry.cxx
-        win32/httpsys.cxx)
+        win32/httpsys/initialise_handle.cxx
+        win32/httpsys/request_queue.cxx
+        win32/httpsys/server_session.cxx
+        win32/httpsys/url_group.cxx
+        win32/httpsys/request_controller.cxx
+        win32/httpsys/service.cxx
+        win32/httpsys/response_writer.cxx
+        )
 
     target_link_libraries(ivy PUBLIC bcrypt httpapi WIL)
 endif()
