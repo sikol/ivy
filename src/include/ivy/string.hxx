@@ -93,6 +93,14 @@ namespace ivy {
         basic_string(const_iterator begin, const_iterator end);
         basic_string(std::vector<value_type, allocator> &&vec);
 
+        template <std::input_iterator input_iterator>
+        basic_string(input_iterator first, input_iterator last) requires
+            std::same_as<std::iter_value_t<input_iterator>, value_type>;
+
+        template <std::ranges::range range>
+        basic_string(range &&r) requires
+            std::same_as<std::ranges::range_value_t<range>, value_type>;
+
         auto operator=(basic_string const &other) -> basic_string &;
         auto operator=(basic_string &&other) noexcept -> basic_string &;
 
@@ -158,6 +166,25 @@ namespace ivy {
         : _storage(std::make_shared<storage_type>(std::move(vec)))
         , _start(0)
         , _len(_storage->data.size() - 1)
+    {
+    }
+
+    template <character_encoding Encoding, typename Alloc>
+    template <std::input_iterator input_iterator>
+    basic_string<Encoding, Alloc>::basic_string(input_iterator first,
+                                                input_iterator last) requires
+        std::same_as<std::iter_value_t<input_iterator>, value_type>
+        : _storage(std::make_shared<storage_type>(std::ranges::subrange(first, last))),
+          _start(0),
+          _len(_storage->data.size() - 1)
+    {
+    }
+
+    template <character_encoding Encoding, typename Alloc>
+    template <std::ranges::range range>
+    basic_string<Encoding, Alloc>::basic_string(range &&r) requires
+        std::same_as<std::ranges::range_value_t<range>, value_type>
+        : basic_string(std::ranges::begin(r), std::ranges::end(r))
     {
     }
 
@@ -341,8 +368,7 @@ namespace ivy {
             cc.convert(s, std::back_inserter(chars));
             cc.flush(std::back_inserter(chars));
         } catch (encoding_error const &) {
-            return make_unexpected(
-                make_error_code(errc::invalid_encoding));
+            return make_unexpected(make_error_code(errc::invalid_encoding));
         }
 
         return target_string(&chars[0], chars.size());

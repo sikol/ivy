@@ -13,7 +13,7 @@ BinPackParameters: false
 BinPackArguments: false
 FixNamespaceComments: true
 BreakConstructorInitializers: BeforeComma
-IndentRequires: true
+IndentRequires: false
 IncludeCategories:
   - Regex:      '^<sys/types.h>$'
     Priority:   1

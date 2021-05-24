@@ -22,7 +22,8 @@ add_executable(test_ivy
     test_siphash.cxx
     test_http.cxx
     test_textchannel.cxx
-    test_stringchannel.cxx)
+    test_stringchannel.cxx
+    test_csv.cxx)
 
 target_link_libraries(test_ivy PRIVATE ivy Catch2::Catch2)
 target_compile_definitions(test_ivy PRIVATE CATCH_CONFIG_NO_WINDOWS_SEH)

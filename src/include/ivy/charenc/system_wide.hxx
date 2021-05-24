@@ -37,6 +37,11 @@ namespace ivy {
         {
             return std::char_traits<char_type>::length(s);
         }
+
+        static auto widen(char c) -> char_type
+        {
+            return static_cast<char_type>(c);
+        }
     };
 
     template <>
