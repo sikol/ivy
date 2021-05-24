@@ -29,3 +29,16 @@ TEST_CASE("ivy:csv: basic reading", "[ivy][csv]") {
     REQUIRE(r2.fields[1] == u8"");
     REQUIRE(r2.fields[2] == u8"xyzzy");
 }
+
+TEST_CASE("ivy:csv: empty file", "[ivy][csv]")
+{
+    ivy::u8stringchannel chan(u8"");
+
+    ivy::csv_reader csv(chan);
+
+    std::vector<ivy::u8csv_row> rows;
+    while (auto r = csv.read())
+        rows.push_back(*r);
+
+    REQUIRE(rows.size() == 0);
+}
