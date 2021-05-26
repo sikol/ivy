@@ -8,7 +8,53 @@
 #include <catch2/catch.hpp>
 
 #include <ivy/algorithm/bintext.hxx>
+#include <ivy/charenc/icu/ucnv.hxx>
 #include <ivy/string.hxx>
+
+TEST_CASE("ivy:ucnv: basic utf32->ascii", "[ivy][charenc][ucnv]")
+{
+    auto uc = ivy::icu::make_ucnv(
+        ivy::icu::encoding_traits<ivy::utf32_encoding>::name(),
+        ivy::icu::encoding_traits<ivy::ascii_encoding>::name(),
+        false);
+    REQUIRE(uc);
+
+    std::u32string utf32_string(U"this is a string");
+    std::vector<std::byte> output;
+
+    auto r = ivy::icu::ucnv_convert_bytes(
+        *uc, true, as_bytes(std::span(utf32_string)), output);
+    REQUIRE(r);
+
+    std::string str(reinterpret_cast<char const *>(&output[0]),
+                    reinterpret_cast<char const *>(&output[0] + output.size()));
+
+    REQUIRE(str.size() == std::ranges::size(utf32_string));
+    REQUIRE(str == "this is a string");
+}
+
+TEST_CASE("ivy:ucnv: basic ascii->utf32", "[ivy][charenc][ucnv]")
+{
+    auto uc = ivy::icu::make_ucnv(
+        ivy::icu::encoding_traits<ivy::ascii_encoding>::name(),
+        ivy::icu::encoding_traits<ivy::utf32_encoding>::name(),
+        false);
+    REQUIRE(uc);
+
+    std::string ascii_string("this is a string");
+    std::vector<std::byte> output;
+
+    auto r = ivy::icu::ucnv_convert_bytes(
+        *uc, true, as_bytes(std::span(ascii_string)), output);
+    REQUIRE(r);
+
+    std::u32string str(
+        reinterpret_cast<char32_t const *>(&output[0]),
+        reinterpret_cast<char32_t const *>(&output[0] + output.size()));
+
+    REQUIRE(str.size() == std::ranges::size(ascii_string));
+    REQUIRE(str == U"this is a string");
+}
 
 TEST_CASE("ivy:u8string", "[ivy][string][charenc][utf8]")
 {
@@ -53,17 +99,28 @@ TEST_CASE("ivy:u8string", "[ivy][string][charenc][utf8]")
     for (auto &&vec : test_vectors) {
         auto u8str = ivy::bytes_to_string<ivy::u8string>(
             as_bytes(std::span(vec.utf8_bytes)));
-        REQUIRE(u8str);
+        INFO(vec.utf8_bytes);
+        if (!u8str) {
+            INFO(u8str.error().what());
+            REQUIRE(u8str);
+        }
 
         auto u32str = ivy::u32string(vec.utf32_s.data(), vec.utf32_s.size());
+        INFO(std::format("u32str size: {}", u32str.size()));
 
         auto hexchars = ivy::bintext_encode_to_string<ivy::hexchars_lc>(*u8str);
-        INFO(hexchars);
+        INFO(std::format("u8str hexchars: {}", hexchars));
 
+        INFO(std::format("u8str size: {}", u8str->size()));
+        INFO(std::format("u8str range size: {}", std::ranges::size(*u8str)));
         auto xcoded = ivy::transcode<ivy::u32string>(*u8str);
+
         REQUIRE(xcoded);
+        INFO(std::format("xcoded size: {}", xcoded->size()));
         REQUIRE(*xcoded == u32str);
 
+        INFO(std::format("xcoded size: {}", xcoded->size()));
+        INFO(std::format("xcoded range size: {}", std::ranges::size(*xcoded)));
         auto recoded = ivy::transcode<ivy::u8string>(*xcoded);
         REQUIRE(recoded);
         REQUIRE(*recoded == *u8str);

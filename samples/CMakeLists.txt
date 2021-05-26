@@ -5,3 +5,18 @@ cmake_minimum_required (VERSION 3.19)
 
 add_executable(http_server http_server.cxx)
 target_link_libraries(http_server PRIVATE ivy)
+
+target_compile_options(http_server PRIVATE
+     $<$<CXX_COMPILER_ID:MSVC>:
+          ${IVY_MSVC_FLAGS}>
+     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
+          ${IVY_CLANG_FLAGS}>)
+
+add_executable(dbcli dbcli.cxx)
+target_link_libraries(dbcli PRIVATE ivy)
+
+target_compile_options(dbcli PRIVATE
+     $<$<CXX_COMPILER_ID:MSVC>:
+          ${IVY_MSVC_FLAGS}>
+     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
+          ${IVY_CLANG_FLAGS}>)

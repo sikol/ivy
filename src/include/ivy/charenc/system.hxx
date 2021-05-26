@@ -3,18 +3,19 @@
  * Distributed under the Boost Software License, Version 1.0.
  */
 
-#ifndef IVY_CHARENC_UTF8_HXX_INCLUDED
-#define IVY_CHARENC_UTF8_HXX_INCLUDED
+#ifndef IVY_CHARENC_SYSTEM_HXX_INCLUDED
+#define IVY_CHARENC_SYSTEM_HXX_INCLUDED
 
-#include <cstddef>
+#include <vector>
+#include <span>
 #include <string>
 
-#include <ivy/charenc/icu/encoding_traits.hxx>
+#include <ivy/charenc/utf32.hxx>
 
 namespace ivy {
 
-    struct utf8_encoding {
-        using char_type = char8_t;
+    struct system_encoding {
+        using char_type = char;
 
         static auto length(char_type const *s) -> std::size_t
         {
@@ -23,17 +24,17 @@ namespace ivy {
 
         static auto widen(char c) -> char_type
         {
-            return static_cast<char_type>(c);
+            return c;
         }
     };
 
     namespace icu {
 
         template <>
-        struct encoding_traits<utf8_encoding> {
+        struct encoding_traits<system_encoding> {
             static auto name() noexcept -> char const *
             {
-                return "utf-8";
+                return nullptr;
             }
         };
 
@@ -41,4 +42,4 @@ namespace ivy {
 
 } // namespace ivy
 
-#endif // IVY_CHARENC_UTF8_HXX_INCLUDED
+#endif // IVY_CHARENC_SYSTEM_HXX_INCLUDED

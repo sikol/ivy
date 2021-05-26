@@ -54,9 +54,6 @@ namespace ivy {
     template <sequential_input_channel channel_type,
               typename allocator = std::allocator<
                   encoding_char_type<typename channel_type::encoding_type>>>
-    requires std::same_as<
-        channel_value_t<channel_type>,
-        encoding_char_type<typename channel_type::encoding_type>>
     class csv_reader {
     public:
         using encoding_type = typename channel_type::encoding_type;
@@ -77,20 +74,14 @@ namespace ivy {
     };
 
     template <sequential_input_channel channel_type, typename allocator>
-    requires std::same_as<
-        channel_value_t<channel_type>,
-        encoding_char_type<typename channel_type::encoding_type>>
-    csv_reader<channel_type, allocator>::csv_reader(channel_type &channel,
+    csv_reader<channel_type, allocator>::csv_reader(channel_type &chan,
                                                     config_type config)
         : _config(config)
-        , _channel(&channel)
+        , _channel(&chan)
     {
     }
 
     template <sequential_input_channel channel_type, typename allocator>
-    requires std::same_as<
-        channel_value_t<channel_type>,
-        encoding_char_type<typename channel_type::encoding_type>>
     auto csv_reader<channel_type, allocator>::read()
         -> expected<row_type, error>
     {

@@ -93,7 +93,7 @@ namespace ivy::win32 {
 
         auto str = bytes_to_string<wstring>(bytes);
         if (!str)
-            return make_unexpected(str.error());
+            return make_unexpected(make_error_code(errc::invalid_encoding));
 
         // Registry strings end with a nul byte
         wstring ret(*str);

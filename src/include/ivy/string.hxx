@@ -14,6 +14,8 @@
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
+#include <concepts>
+#include <iterator>
 
 #include <ivy/charenc.hxx>
 #include <ivy/charenc/ascii.hxx>
@@ -296,13 +298,19 @@ namespace ivy {
     template <character_encoding Encoding, typename Alloc>
     auto basic_string<Encoding, Alloc>::begin() const noexcept -> const_iterator
     {
-        return &_storage->data[0] + _start;
+        if (_len == 0)
+            return nullptr;
+
+        return _storage->data.data() + _start;
     }
 
     template <character_encoding Encoding, typename Alloc>
     auto basic_string<Encoding, Alloc>::end() const noexcept -> const_iterator
     {
-        return &_storage->data[0] + _start + _len;
+        if (_len == 0)
+            return nullptr;
+
+        return _storage->data.data() + _start + _len;
     }
 
     template <character_encoding Encoding, typename Alloc>
@@ -364,6 +372,9 @@ namespace ivy {
         std::vector<typename target_encoding::char_type> chars;
 
         charconv<source_encoding, target_encoding> cc;
+
+        IVY_TRACE("transcode: len={}", s.size());
+
         try {
             cc.convert(s, std::back_inserter(chars));
             cc.flush(std::back_inserter(chars));
@@ -377,7 +388,7 @@ namespace ivy {
     template <typename Target, std::ranges::range Range>
     auto bytes_to_string(Range &&r,
                          std::endian endianness = std::endian::native)
-        -> expected<Target, std::error_code>
+        -> expected<Target, error>
     {
         using encoding = typename Target::encoding_type;
 
@@ -387,8 +398,8 @@ namespace ivy {
         try {
             tx.convert(r, std::back_inserter(chars));
             tx.flush(std::back_inserter(chars));
-        } catch (encoding_error const &) {
-            return make_unexpected(errc::invalid_encoding);
+        } catch (encoding_error const &e) {
+            return make_unexpected(e);
         }
 
         if (chars.empty())

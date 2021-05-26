@@ -3,46 +3,13 @@
  * Distributed under the Boost Software License, Version 1.0.
  */
 
-#ifndef IVY_ITERATOR_HXX_INCLUDED
-#define IVY_ITERATOR_HXX_INCLUDED
+#ifndef IVY_ITERATOR_STATIC_CAST_HXX_INCLUDED
+#define IVY_ITERATOR_STATIC_CAST_HXX_INCLUDED
 
-#include <cstddef>
+#include <type_traits>
+#include <iterator>
 
 namespace ivy {
-
-    class null_output_iterator final {
-    public:
-        using iterator_category = std::output_iterator_tag;
-        using value_type = void;
-        using difference_type = std::ptrdiff_t;
-        using pointer = void;
-        using reference = void;
-
-        auto operator*() const noexcept -> null_output_iterator const &
-        {
-            return *this;
-        }
-
-        auto operator*() noexcept -> null_output_iterator &
-        {
-            return *this;
-        }
-
-        template <typename V>
-        auto operator=(V &&) const noexcept -> void
-        {
-        }
-
-        auto operator++() noexcept -> null_output_iterator &
-        {
-            return *this;
-        }
-
-        auto operator++(int) noexcept -> null_output_iterator &
-        {
-            return *this;
-        }
-    };
 
     template <typename from_type,
               typename to_type,
@@ -98,6 +65,6 @@ namespace ivy {
         return static_cast_iterator<from_type, to_type, iterator>(it);
     }
 
-} // namespace ivy
+}
 
-#endif // IVY_ITERATOR_HXX_INCLUDED
+#endif // IVY_ITERATOR_STATIC_CAST_HXX_INCLUDED

@@ -10,7 +10,10 @@
       "name": "base",
       "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/${presetName}"
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "vcpkg/scripts/buildsystems/vcpkg.cmake"
+      }
     },
     {
       "name": "x64",
@@ -26,8 +29,8 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl",
         "CMAKE_CXX_COMPILER": "cl",
-        "CMAKE_C_FLAGS": "/FC /W4 /WX /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl",
-        "CMAKE_CXX_FLAGS": "/FC /W4 /WX /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl /EHsc /permissive- /Zc:preprocessor /Zc:inline /Zc:externConstexpr /Zc:__cplusplus",
+        "CMAKE_C_FLAGS": "/FC /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl",
+        "CMAKE_CXX_FLAGS": "/FC /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl /EHsc /permissive- /Zc:preprocessor /Zc:inline /Zc:externConstexpr /Zc:__cplusplus",
         "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /MD",
@@ -40,26 +43,41 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl",
         "CMAKE_CXX_COMPILER": "cl",
-        "CMAKE_C_FLAGS": "-fsanitize=address /FC /W4 /WX /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl",
-        "CMAKE_CXX_FLAGS": "-fsanitize=address /FC /W4 /WX /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl /EHsc /permissive- /Zc:preprocessor /Zc:inline /Zc:externConstexpr /Zc:__cplusplus",
+        "CMAKE_C_FLAGS": "-fsanitize=address /FC /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl",
+        "CMAKE_CXX_FLAGS": "-fsanitize=address /FC /external:I ${sourceDir}/thirdparty /external:env:INCLUDE /external:W0 /utf-8 /sdl /EHsc /permissive- /Zc:preprocessor /Zc:inline /Zc:externConstexpr /Zc:__cplusplus",
         "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
         "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /MD",
-        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /MD"
+        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /MD",
+        "CMAKE_CXX_EXTENSIONS": "OFF"
       }
     },
     {
       "name": "clang",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang-cl",
-        "CMAKE_CXX_COMPILER": "clang-cl",
-        "CMAKE_C_FLAGS": "-fdiagnostics-absolute-paths /W4 /WX /utf-8 /sdl",
-        "CMAKE_CXX_FLAGS": "-fdiagnostics-absolute-paths /W4 /WX /utf-8 /sdl /EHsc /permissive- /Zc:inline /Zc:__cplusplus",
-        "CMAKE_C_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
-        "CMAKE_CXX_FLAGS_DEBUG": "/RTC1 /Od /Zi /MDd",
-        "CMAKE_C_FLAGS_RELEASE": "/O2 /Ob2 /MD",
-        "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /MD"
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang",
+        "CMAKE_C_FLAGS": "-m64 -fdiagnostics-absolute-paths",
+        "CMAKE_CXX_FLAGS": "-m64 -fdiagnostics-absolute-paths",
+        "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
+        "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
+        "CMAKE_C_FLAGS_RELEASE": "-O2 -s",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O2 -s"
+      }
+    },
+    {
+      "name": "clang-asan",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang",
+        "CMAKE_C_FLAGS": "-m64 -fdiagnostics-absolute-paths -fsanitize=address",
+        "CMAKE_CXX_FLAGS": "-m64 -fdiagnostics-absolute-paths -fsanitize=address",
+        "CMAKE_C_FLAGS_DEBUG": "-O0 -g",
+        "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g",
+        "CMAKE_C_FLAGS_RELEASE": "-O2 -s",
+        "CMAKE_CXX_FLAGS_RELEASE": "-O2 -s"
       }
     },
     {
@@ -96,6 +114,10 @@
     {
       "name": "x64-windows-msvc-asan",
       "inherits": [ "base", "x64", "windows", "msvc-asan", "debug" ]
+    },
+    {
+      "name": "x64-windows-clang-asan",
+      "inherits": [ "base", "x64", "windows", "clang-asan", "debug" ]
     },
     {
       "name": "x64-windows-clang-debug",

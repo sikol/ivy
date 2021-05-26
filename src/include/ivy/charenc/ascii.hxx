@@ -6,16 +6,11 @@
 #ifndef IVY_CHARENC_ASCII_HXX_INCLUDED
 #define IVY_CHARENC_ASCII_HXX_INCLUDED
 
-#include <bit>
-#include <concepts>
 #include <cstddef>
-#include <iterator>
-#include <ranges>
 #include <string>
-#include <type_traits>
 
-#include <ivy/error.hxx>
-#include <ivy/charenc/utf32.hxx>
+#include <ivy/charenc.hxx>
+#include <ivy/charenc/icu/encoding_traits.hxx>
 
 namespace ivy {
 
@@ -33,50 +28,17 @@ namespace ivy {
         }
     };
 
-    template <>
-    class charconv<ascii_encoding, utf32_encoding> {
-    public:
-        charconv(charconv_options = {}) noexcept {}
+    namespace icu {
 
-        template <std::ranges::input_range input_range,
-                  std::output_iterator<char32_t> output_iterator>
-        auto convert(input_range &&r, output_iterator out) -> void
-        {
-            for (auto c : r) {
-                if (c < 0 || c > 0x7F)
-                    throw encoding_error("invalid encoding");
-                *out++ = static_cast<char32_t>(c);
+        template <>
+        struct encoding_traits<ascii_encoding> {
+            static auto name() noexcept -> char const *
+            {
+                return "ascii";
             }
-        }
+        };
 
-        template <std::output_iterator<char32_t> output_iterator>
-        auto flush(output_iterator) -> void
-        {
-        }
-    };
-
-    template <>
-    class charconv<utf32_encoding, ascii_encoding> {
-    public:
-        charconv(charconv_options = {}) noexcept {}
-
-        template <std::ranges::input_range input_range,
-                  std::output_iterator<char> output_iterator>
-        auto convert(input_range &&r, output_iterator out) -> void
-        {
-            for (auto c : r) {
-                if (c > 0x7F)
-                    throw encoding_error("invalid encoding");
-
-                *out++ = static_cast<char>(c);
-            }
-        }
-
-        template <std::output_iterator<char> output_iterator>
-        auto flush(output_iterator) -> void
-        {
-        }
-    };
+    } // namespace icu
 
 } // namespace ivy
 
