@@ -34,6 +34,14 @@ namespace ivy::db {
         }
     };
 
+    class end_of_data : public db_error {
+    public:
+        end_of_data()
+            : db_error("end of data")
+        {
+        }
+    };
+
 } // namespace ivy::db
 
 #endif // IVY_DB_ERROR_HXX_INCLUDED

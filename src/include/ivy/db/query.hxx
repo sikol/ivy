@@ -8,7 +8,7 @@
 
 #include <memory>
 
-#include <ivy/db/result_set.hxx>
+#include <ivy/db/query_result.hxx>
 #include <ivy/error.hxx>
 #include <ivy/expected.hxx>
 #include <ivy/noncopyable.hxx>
@@ -21,7 +21,7 @@ namespace ivy::db {
 
     public:
         virtual ~query() = default;
-        virtual auto execute() -> expected<result_set_handle, error> = 0;
+        virtual auto execute() -> expected<query_result_handle, error> = 0;
     };
 
     using query_handle = std::unique_ptr<query>;

@@ -47,11 +47,6 @@ namespace ivy::icu {
             auto begin = std::ranges::begin(r);
             auto end = std::ranges::end(r);
 
-            IVY_TRACE("convert: begin={}, end={}, len={}",
-                      static_cast<void const *>(&*begin),
-                      static_cast<void const *>(&*end),
-                      std::ranges::size(r));
-
             auto bout = make_byte_decode_iterator<target_type>(
                 std::endian::native, out);
 

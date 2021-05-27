@@ -18,8 +18,8 @@ namespace ivy::win32 {
 
         try {
             return std::make_unique<httpsys::service>(std::nullopt, &attrs, 0);
-        } catch (std::exception const &e) {
-            return make_unexpected(e);
+        } catch (std::exception const &) {
+            return make_unexpected(make_error(std::current_exception()));
         }
     }
 
@@ -58,18 +58,17 @@ namespace ivy::win32::httpsys {
             new (std::nothrow) http::http_listener(lsn));
 
         if (!lsnp)
-            return make_unexpected(std::system_error(
-                std::make_error_code(std::errc::not_enough_memory)));
+            return make_unexpected(make_error(std::errc::not_enough_memory));
 
         auto wstr = transcode<wstring>(str(lsn.prefix));
         if (!wstr)
-            return make_unexpected(
-                http::http_error("invalid listener URI: cannot transcode"));
+            return make_unexpected(make_error<http::http_error>(
+                "invalid listener URI: cannot transcode"));
 
         auto r = _url_group.add_url(
             *wstr, reinterpret_cast<HTTP_URL_CONTEXT>(lsnp.get()));
         if (!r)
-            return make_unexpected(std::system_error(r.error()));
+            return make_unexpected(make_error(r.error()));
 
         _listeners.push_back(std::move(lsnp));
 
@@ -79,7 +78,7 @@ namespace ivy::win32::httpsys {
     auto service::run() -> expected<void, error>
     {
         if (auto r = _url_group.set_request_queue(_request_queue); !r) {
-            return make_unexpected(http::http_error(
+            return make_unexpected(make_error<http::http_error>(
                 std::format("cannot add URL group to request queue: {}",
                             r.error().message())));
         }

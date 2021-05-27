@@ -16,6 +16,8 @@
 
 namespace ivy {
 
+    class error;
+
     namespace detail {
 
         template <typename Error>
@@ -32,12 +34,14 @@ namespace ivy {
         };
 
         template <typename Error>
-        unexpected<Error>::unexpected(Error &&error) : _error(std::move(error))
+        unexpected<Error>::unexpected(Error &&error)
+            : _error(std::move(error))
         {
         }
 
         template <typename Error>
-        unexpected<Error>::unexpected(Error const &error) : _error(error)
+        unexpected<Error>::unexpected(Error const &error)
+            : _error(error)
         {
         }
 
@@ -89,17 +93,24 @@ namespace ivy {
         auto operator->() noexcept -> T *;
 
         auto error() const noexcept -> Error const &;
+
+        auto or_throw() -> T &&requires
+            std::derived_from<std::remove_cvref_t<Error>, std::exception>;
+        auto or_throw() -> T &&requires
+            std::same_as<std::remove_cvref_t<Error>, ivy::error>;
     };
 
     template <typename T, typename Error>
     template <typename V>
-    expected<T, Error>::expected(V &&value) noexcept : _value(std::move(value))
+    expected<T, Error>::expected(V &&value) noexcept
+        : _value(std::move(value))
     {
     }
 
     template <typename T, typename Error>
     template <typename V>
-    expected<T, Error>::expected(V const &value) : _value(value)
+    expected<T, Error>::expected(V const &value)
+        : _value(value)
     {
     }
 
@@ -156,6 +167,26 @@ namespace ivy {
     {
         IVY_CHECK(_error.has_value(), "expected<>::error(): no error");
         return *_error;
+    }
+
+    template <typename T, typename Error>
+    auto expected<T, Error>::or_throw() -> T &&requires
+        std::derived_from<std::remove_cvref_t<Error>, std::exception>
+    {
+        if (*this)
+            return std::move(*_value);
+
+        throw *_error;
+    }
+
+    template <typename T, typename Error>
+    auto expected<T, Error>::or_throw() -> T &&requires
+        std::same_as<std::remove_cvref_t<Error>, ivy::error>
+    {
+        if (*this)
+            return std::move(*_value);
+
+        _error->rethrow();
     }
 
     template <typename Error>

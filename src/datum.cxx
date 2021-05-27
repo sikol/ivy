@@ -177,7 +177,7 @@ namespace ivy {
         return &type;
     }
 
-    auto make_string_datum(std::string s) -> datum
+    auto make_string_datum(std::string const &s) -> datum
     {
         return datum(get_string_type(), s);
     }

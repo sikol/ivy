@@ -9,6 +9,7 @@
 #include <ivy/db/connection.hxx>
 #include <ivy/db/error.hxx>
 #include <ivy/db/query.hxx>
+#include <ivy/db/query_result.hxx>
 #include <ivy/db/result_set.hxx>
 #include <ivy/db/row.hxx>
 #include <ivy/db/value.hxx>

@@ -16,14 +16,16 @@ namespace ivy::db::odbc {
 
     class row;
 
-    class value : public db::value {
-    protected:
+    class value final : public db::value {
+    public:
         nanodbc::result *_result;
-        std::size_t _column_number;
+        short _column_number;
 
         friend class row;
 
-        value(nanodbc::result *, std::size_t);
+        value(nanodbc::result *, short);
+
+        auto as_datum() const -> expected<datum, error> override;
     };
 
     using value_handle = std::unique_ptr<value>;

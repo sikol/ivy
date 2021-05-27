@@ -15,19 +15,16 @@
 
 namespace ivy::db::odbc {
 
-    class row : public db::row {
+    class row final : public db::row {
         nanodbc::result *_result;
 
-    protected:
-        friend class result_set;
-        row(nanodbc::result &);
-
     public:
+        row(nanodbc::result *);
         ~row();
 
         auto column_count() -> std::size_t override;
         auto get_value(std::size_t column)
-            -> expected<value_handle, error> override;
+            -> expected<db::value_handle, error> override;
     };
 
 } // namespace ivy::db::odbc

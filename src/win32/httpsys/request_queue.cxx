@@ -50,13 +50,13 @@ namespace ivy::win32::httpsys {
             _handle.get(), 0, 0, &hr, sizeof(hr), &request_size, nullptr);
 
         if (r != ERROR_MORE_DATA)
-            return make_unexpected(http::http_error(
+            return make_unexpected(make_error<http::http_error>(
                 std::format("HttpReceiveHttpRequest() failed: {}",
                             make_win32_error(r).message())));
 
         auto p = ::HeapAlloc(::GetProcessHeap(), 0, request_size);
         if (p == nullptr)
-            return make_unexpected(http::http_error(
+            return make_unexpected(make_error<http::http_error>(
                 "cannot allocate request structure: out of memory"));
 
         auto reqp = unique_http_request(static_cast<HTTP_REQUEST *>(p));
@@ -69,7 +69,7 @@ namespace ivy::win32::httpsys {
                                      &request_size,
                                      nullptr);
         if (r != NO_ERROR)
-            return make_unexpected(http::http_error(
+            return make_unexpected(make_error<http::http_error>(
                 std::format("HttpReceiveHttpRequest() failed: {}",
                             make_win32_error(r).message())));
 

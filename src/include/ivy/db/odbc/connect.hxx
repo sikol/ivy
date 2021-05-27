@@ -12,12 +12,12 @@
 
 namespace ivy::db::odbc {
 
-    auto connect(u8string const &connection_string)
+    auto connect(u16string const &connection_string)
         -> expected<db::connection_handle, error>;
 
-    auto connect(u8string const &connection_string,
-                 u8string const &username,
-                 u8string const &password)
+    auto connect(u16string const &connection_string,
+                 u16string const &username,
+                 u16string const &password)
         -> expected<db::connection_handle, error>;
 
 } // namespace ivy::db::odbc

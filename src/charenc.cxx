@@ -76,27 +76,21 @@ namespace ivy::icu {
     auto make_ucnv(char const *source, char const *target, bool accept_invalid)
         -> expected<ucnv_handle, error>
     {
-        IVY_TRACE("ucnv: opening conversion from [{}] to [{}]", source, target);
-
         UErrorCode err{};
 
         UConverter *source_cnv = ucnv_open(source, &err);
 
         if (U_FAILURE(err))
-            return make_unexpected(error(
-                encoding_error(std::format("failed to open encoding '{}': {}",
-                                           source,
-                                           u_errorName(err)))));
+            return make_unexpected(make_error<encoding_error>(std::format(
+                "failed to open encoding '{}': {}", source, u_errorName(err))));
 
         auto source_h = uconverter_handle(source_cnv);
 
         UConverter *target_cnv = ucnv_open(target, &err);
 
         if (U_FAILURE(err)) {
-            return make_unexpected(error(
-                encoding_error(std::format("failed to open encoding '{}': {}",
-                                           target,
-                                           u_errorName(err)))));
+            return make_unexpected(make_error<encoding_error>(std::format(
+                "failed to open encoding '{}': {}", target, u_errorName(err))));
         }
 
         auto target_h = uconverter_handle(target_cnv);
@@ -115,17 +109,17 @@ namespace ivy::icu {
                                   nullptr,
                                   &err);
             ucnv_setToUCallBack(source_h.get(),
-                                  UCNV_TO_U_CALLBACK_SUBSTITUTE,
-                                  nullptr,
-                                  nullptr,
-                                  nullptr,
-                                  &err);
+                                UCNV_TO_U_CALLBACK_SUBSTITUTE,
+                                nullptr,
+                                nullptr,
+                                nullptr,
+                                &err);
             ucnv_setToUCallBack(target_h.get(),
-                                  UCNV_TO_U_CALLBACK_SUBSTITUTE,
-                                  nullptr,
-                                  nullptr,
-                                  nullptr,
-                                  &err);
+                                UCNV_TO_U_CALLBACK_SUBSTITUTE,
+                                nullptr,
+                                nullptr,
+                                nullptr,
+                                &err);
         } else {
             ucnv_setFromUCallBack(source_h.get(),
                                   UCNV_FROM_U_CALLBACK_STOP,
@@ -154,8 +148,8 @@ namespace ivy::icu {
         }
 
         if (U_FAILURE(err)) {
-            return make_unexpected(error(encoding_error(std::format(
-                "failed to configure encoding: {}", u_errorName(err)))));
+            return make_unexpected(make_error<encoding_error>(std::format(
+                "failed to configure encoding: {}", u_errorName(err))));
         }
 
         return ucnv_handle(new ucnv(std::move(source_h), std::move(target_h)));
@@ -209,7 +203,7 @@ namespace ivy::icu {
         } while (err == U_BUFFER_OVERFLOW_ERROR);
 
         if (U_FAILURE(err))
-            return make_unexpected(encoding_error(std::format(
+            return make_unexpected(make_error<encoding_error>(std::format(
                 "ucnv_convertEx failed: {}",
                 make_error_code(static_cast<errc>(err)).message())));
 

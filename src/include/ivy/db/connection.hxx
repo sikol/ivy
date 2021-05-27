@@ -21,7 +21,7 @@ namespace ivy::db {
     public:
         virtual ~connection() = default;
 
-        [[nodiscard]] virtual auto prepare_query(u8string const &)
+        [[nodiscard]] virtual auto prepare_query(u16string const &)
             -> expected<query_handle, error> = 0;
 
         virtual auto disconnect() -> void = 0;

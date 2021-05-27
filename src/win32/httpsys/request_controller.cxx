@@ -22,13 +22,13 @@ namespace ivy::win32::httpsys {
 
         auto uri16str = bytes_to_string<u16string>(raw_url_bytes);
         if (!uri16str)
-            return make_unexpected(
-                http::http_error("Invalid request URI: cannot decode bytes"));
+            return make_unexpected(make_error<http::http_error>(
+                "Invalid request URI: cannot decode bytes"));
 
         auto uristr = transcode<u8string>(*uri16str);
         if (!uristr)
-            return make_unexpected(
-                http::http_error("Invalid request URI: cannot transcode"));
+            return make_unexpected(make_error<http::http_error>(
+                "Invalid request URI: cannot transcode"));
 
         log_trace(
             "HTTP: Parse request URI [{}]",
@@ -37,8 +37,8 @@ namespace ivy::win32::httpsys {
 
         auto uri = net::parse_uri(*uristr);
         if (!uri)
-            return make_unexpected(
-                http::http_error("Invalid request URI: cannot parse"));
+            return make_unexpected(make_error<http::http_error>(
+                "Invalid request URI: cannot parse"));
 
         auto version = http::http_version(req->Version.MajorVersion,
                                           req->Version.MinorVersion);
@@ -126,7 +126,7 @@ namespace ivy::win32::httpsys {
                 {.has_body = has_body, .chunked = chunked_response});
             !r) {
 
-            return make_unexpected(http::http_error(std::format(
+            return make_unexpected(make_error<http::http_error>(std::format(
                 "failed to start response: {}", r.error().message())));
         }
 
@@ -139,7 +139,7 @@ namespace ivy::win32::httpsys {
                 if (!nread) {
                     if (nread.error() != errc::end_of_file) {
                         // Do not call finish_response here() so we abort.
-                        return make_unexpected(http::http_error(
+                        return make_unexpected(make_error<http::http_error>(
                             std::format("failed to read request body: {}",
                                         nread.error().message())));
                     }
@@ -150,14 +150,15 @@ namespace ivy::win32::httpsys {
                 if (auto r =
                         _writer.write_data(std::span(buf).subspan(0, *nread));
                     !r) {
-                    return make_unexpected(http::http_error(std::format(
-                        "failed to write response body: {}", r.error().message())));
+                    return make_unexpected(make_error<http::http_error>(
+                        std::format("failed to write response body: {}",
+                                    r.error().message())));
                 }
             }
         }
 
         if (auto r = _writer.finish_response(); !r)
-            return make_unexpected(http::http_error(std::format(
+            return make_unexpected(make_error<http::http_error>(std::format(
                 "failed to finish response: {}", r.error().message())));
 
         return {};

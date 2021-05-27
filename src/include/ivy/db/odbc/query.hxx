@@ -23,9 +23,9 @@ namespace ivy::db::odbc {
         query(connection &);
         virtual ~query();
 
-        auto prepare(wstring const &query_string) -> expected<void, error>;
+        auto prepare(u16string const &query_string) -> expected<void, error>;
 
-        auto execute() -> expected<db::result_set_handle, error> override;
+        auto execute() -> expected<db::query_result_handle, error> override;
     };
 
     using query_handle = std::unique_ptr<query>;

@@ -12,5 +12,6 @@ namespace ivy {
     template class basic_string<utf32_encoding>;
     template class basic_string<ascii_encoding>;
     template class basic_string<system_wide_encoding>;
+    template class basic_string<system_encoding>;
 
 } // namespace ivy

@@ -93,7 +93,7 @@ namespace ivy {
 
             auto r = _channel->read(std::span(&c, 1));
             if (!r)
-                return make_unexpected(csv_error(
+                return make_unexpected(make_error<csv_error>(
                     std::format("file read failed: {}", r.error().message())));
 
             if (c == '\n') {

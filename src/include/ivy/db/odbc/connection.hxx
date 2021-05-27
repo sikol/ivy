@@ -28,15 +28,15 @@ namespace ivy::db::odbc {
         connection();
         ~connection();
 
-        [[nodiscard]] auto connect(wstring const &connection_string)
+        [[nodiscard]] auto connect(u16string const &connection_string)
             -> expected<void, error>;
 
-        [[nodiscard]] auto connect(wstring const &connection_string,
-                                   wstring const &username,
-                                   wstring const &password)
+        [[nodiscard]] auto connect(u16string const &connection_string,
+                                   u16string const &username,
+                                   u16string const &password)
             -> expected<void, error>;
 
-        [[nodiscard]] auto prepare_query(u8string const &)
+        [[nodiscard]] auto prepare_query(u16string const &)
             -> expected<db::query_handle, error> override;
 
         auto disconnect() -> void override;

@@ -24,7 +24,8 @@ target_sources(ivy PRIVATE
     string.cxx
     error.cxx
     charenc.cxx
-    db/odbc.cxx)
+    db/odbc.cxx
+    db/db.cxx)
     
 if(WIN32)
     target_sources(ivy PRIVATE 
@@ -42,7 +43,7 @@ if(WIN32)
         win32/httpsys/response.cxx
         win32/httpsys/header.cxx)
 
-    target_link_libraries(ivy PUBLIC bcrypt httpapi WIL::WIL)
+    target_link_libraries(ivy PUBLIC bcrypt httpapi odbc32 WIL::WIL)
 endif()
 
 target_link_libraries(ivy PUBLIC nanodbc PkgConfig::icu-uc)

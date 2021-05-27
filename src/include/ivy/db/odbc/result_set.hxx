@@ -10,20 +10,22 @@
 
 #include <nanodbc/nanodbc.h>
 
-#include <ivy/noncopyable.hxx>
 #include <ivy/db/result_set.hxx>
+#include <ivy/noncopyable.hxx>
 
 namespace ivy::db::odbc {
 
     class result_set : public db::result_set {
-        nanodbc::result _result;
+        nanodbc::result *_result;
 
     public:
-        result_set(nanodbc::result &&) noexcept;
+        result_set(nanodbc::result *) noexcept;
 
         virtual ~result_set();
 
-        auto column_count() -> std::size_t override;
+        [[nodiscard]] auto column_count() -> std::size_t override;
+        [[nodiscard]] auto get_next_row()
+            -> expected<row_handle, error> override;
     };
 
     using result_set_handle = std::unique_ptr<result_set>;

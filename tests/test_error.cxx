@@ -9,7 +9,7 @@
 
 ivy::error return_runtime_error(std::string what)
 {
-    return std::runtime_error(what);
+    return ivy::make_error<std::runtime_error>(what);
 }
 
 ivy::error return_success()

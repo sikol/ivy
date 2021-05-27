@@ -9,16 +9,18 @@
 #include <atomic>
 #include <bit>
 #include <compare>
+#include <concepts>
 #include <iostream>
+#include <iterator>
 #include <ranges>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <vector>
-#include <concepts>
-#include <iterator>
 
 #include <ivy/charenc.hxx>
 #include <ivy/charenc/ascii.hxx>
+#include <ivy/charenc/system.hxx>
 #include <ivy/charenc/system_wide.hxx>
 #include <ivy/charenc/utf16.hxx>
 #include <ivy/charenc/utf32.hxx>
@@ -121,6 +123,7 @@ namespace ivy {
         auto end() const noexcept -> const_iterator;
     };
 
+    using string = basic_string<system_encoding>;
     using astring = basic_string<ascii_encoding>;
     using wstring = basic_string<system_wide_encoding>;
     using u8string = basic_string<utf8_encoding>;
@@ -176,7 +179,8 @@ namespace ivy {
     basic_string<Encoding, Alloc>::basic_string(input_iterator first,
                                                 input_iterator last) requires
         std::same_as<std::iter_value_t<input_iterator>, value_type>
-        : _storage(std::make_shared<storage_type>(std::ranges::subrange(first, last))),
+        : _storage(std::make_shared<storage_type>(std::ranges::subrange(first,
+                                                                        last))),
           _start(0),
           _len(_storage->data.size() - 1)
     {
@@ -369,28 +373,50 @@ namespace ivy {
         -> expected<target_string, std::error_code>
     {
         using target_encoding = typename target_string::encoding_type;
-        std::vector<typename target_encoding::char_type> chars;
+        using new_allocator =
+            typename std::allocator_traits<allocator>::template rebind_alloc<
+                typename target_encoding::char_type>;
+        std::vector<typename target_encoding::char_type, new_allocator> chars;
 
         charconv<source_encoding, target_encoding> cc;
-
-        IVY_TRACE("transcode: len={}", s.size());
 
         try {
             cc.convert(s, std::back_inserter(chars));
             cc.flush(std::back_inserter(chars));
+            return target_string(chars.begin(), chars.end());
         } catch (encoding_error const &) {
             return make_unexpected(make_error_code(errc::invalid_encoding));
         }
-
-        return target_string(&chars[0], chars.size());
     }
 
-    template <typename Target, std::ranges::range Range>
-    auto bytes_to_string(Range &&r,
-                         std::endian endianness = std::endian::native)
-        -> expected<Target, error>
+    template <typename target_string, typename traits_type, typename allocator>
+    auto transcode(std::basic_string<char, traits_type, allocator> const &s)
+        -> expected<target_string, std::error_code>
     {
-        using encoding = typename Target::encoding_type;
+        using target_encoding = typename target_string::encoding_type;
+        using new_allocator =
+            typename std::allocator_traits<allocator>::template rebind_alloc<
+                typename target_encoding::char_type>;
+        std::vector<typename target_encoding::char_type, new_allocator> chars;
+
+        charconv<system_encoding, target_encoding> cc;
+
+        try {
+            cc.convert(s, std::back_inserter(chars));
+            cc.flush(std::back_inserter(chars));
+            return target_string(chars.begin(), chars.end());
+        } catch (encoding_error const &) {
+            return make_unexpected(make_error_code(errc::invalid_encoding));
+        }
+    }
+
+    template <typename target_string, std::ranges::range input_range>
+    auto bytes_to_string(input_range &&r,
+                         std::endian endianness = std::endian::native)
+        -> expected<target_string, error>
+    requires std::same_as<std::byte, std::ranges::range_value_t<input_range>>
+    {
+        using encoding = typename target_string::encoding_type;
 
         std::vector<typename encoding::char_type> chars;
         charconv<std::byte, encoding> tx({.endianness = endianness});
@@ -398,14 +424,10 @@ namespace ivy {
         try {
             tx.convert(r, std::back_inserter(chars));
             tx.flush(std::back_inserter(chars));
+            return target_string(chars.begin(), chars.end());
         } catch (encoding_error const &e) {
-            return make_unexpected(e);
+            return make_unexpected(make_error<encoding_error>(e));
         }
-
-        if (chars.empty())
-            return Target();
-
-        return Target(&chars[0], &chars[0] + chars.size());
     }
 
     template <typename encoding, typename alloc>
@@ -432,11 +454,30 @@ namespace ivy {
                     basic_string<encoding, allocator> const &s)
         -> std::ostream &
     {
-        using ascii_allocator =
+        using system_allocator =
             typename std::allocator_traits<allocator>::template rebind_alloc<
-                typename ascii_encoding::char_type>;
+                typename system_encoding::char_type>;
 
-        auto astr = transcode<basic_string<ascii_encoding, ascii_allocator>>(s);
+        auto astr =
+            transcode<basic_string<system_encoding, system_allocator>>(s);
+
+        if (astr)
+            strm.write(astr->data(), astr->size());
+
+        return strm;
+    }
+
+    template <character_encoding encoding, typename allocator>
+    auto operator<<(std::wostream &strm,
+                    basic_string<encoding, allocator> const &s)
+        -> std::wostream &
+    {
+        using system_allocator =
+            typename std::allocator_traits<allocator>::template rebind_alloc<
+                typename system_encoding::char_type>;
+
+        auto astr =
+            transcode<basic_string<system_wide_encoding, system_allocator>>(s);
 
         if (astr)
             strm.write(astr->data(), astr->size());
@@ -448,6 +489,7 @@ namespace ivy {
     extern template class basic_string<utf16_encoding>;
     extern template class basic_string<utf32_encoding>;
     extern template class basic_string<ascii_encoding>;
+    extern template class basic_string<system_encoding>;
     extern template class basic_string<system_wide_encoding>;
 
 } // namespace ivy

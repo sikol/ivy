@@ -41,6 +41,7 @@ namespace ivy {
             -> expected<io_size_t, std::error_code>;
     };
 
+    using stringchannel = basic_stringchannel<system_encoding>;
     using u8stringchannel = basic_stringchannel<utf8_encoding>;
     using u16stringchannel = basic_stringchannel<utf16_encoding>;
     using u32stringchannel = basic_stringchannel<utf32_encoding>;
@@ -113,6 +114,7 @@ namespace ivy {
     extern template class basic_stringchannel<utf32_encoding>;
     extern template class basic_stringchannel<ascii_encoding>;
     extern template class basic_stringchannel<system_wide_encoding>;
+    extern template class basic_stringchannel<system_encoding>;
 
 } // namespace ivy
 
