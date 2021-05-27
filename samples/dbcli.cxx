@@ -10,23 +10,28 @@
 #include <ivy/db.hxx>
 #include <ivy/db/odbc/connect.hxx>
 #include <ivy/format.hxx>
+#include <ivy/string/transcode.hxx>
 
-auto print_value(ivy::db::value &v) -> void {
+auto format_value(ivy::db::value &v) -> std::string
+{
     auto d = v.as_datum().or_throw();
 
     if (is<ivy::null_type>(d))
-        ivy::print("NULL\t");
-    else
-        ivy::print("{}\t", str(d));
+        return "NULL";
+
+    return str(d);
 }
 
 auto print_row(ivy::db::row &row) -> void
 {
-    std::ranges::for_each(row.values(), print_value);
-    ivy::print("\n");
+    auto values = row.values();
+    std::ranges::copy(values | std::views::transform(format_value),
+                      std::ostream_iterator<std::string>(std::cout, "\t"));
+    std::cout << "\n";
 }
 
-auto print_result_set(ivy::db::result_set &rs) -> void {
+auto print_result_set(ivy::db::result_set &rs) -> void
+{
     std::ranges::for_each(rs.rows(), print_row);
 }
 
@@ -68,7 +73,7 @@ auto sqlrepl(ivy::db::connection_handle &conn) -> void
         if (!u16query) {
             ivy::fprint(std::cerr,
                         "cannot transcode query: {}\n",
-                        u16query.error().message());
+                        u16query.error().what());
             continue;
         }
 
@@ -88,7 +93,7 @@ int main(int, char **argv)
     if (!u16connstr) {
         ivy::fprint(std::cerr,
                     "invalid connection string: {}\n",
-                    u16connstr.error().message());
+                    u16connstr.error().what());
         return 1;
     }
 

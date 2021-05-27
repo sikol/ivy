@@ -10,6 +10,7 @@
 #include <ivy/algorithm/bintext.hxx>
 #include <ivy/charenc/icu/ucnv.hxx>
 #include <ivy/string.hxx>
+#include <ivy/string/transcode.hxx>
 
 TEST_CASE("ivy:ucnv: basic utf32->ascii", "[ivy][charenc][ucnv]")
 {

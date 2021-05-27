@@ -6,6 +6,7 @@
 #include <ivy/http/service.hxx>
 #include <ivy/log.hxx>
 #include <ivy/log/ostream_sink.hxx>
+#include <ivy/string/transcode.hxx>
 #include <ivy/win32/httpsys.hxx>
 
 namespace {
