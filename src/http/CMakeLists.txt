@@ -16,6 +16,16 @@ target_compile_options(ivy-http PRIVATE
 
 target_sources(ivy-http PRIVATE src/http.cxx)
 
+target_sources(ivy-http PRIVATE
+    include/ivy/http/header.hxx
+    include/ivy/http/method.hxx
+    include/ivy/http/request.hxx
+    include/ivy/http/response.hxx
+    include/ivy/http/service.hxx
+    include/ivy/http/status.hxx
+    include/ivy/http/version.hxx
+)
+
 if(WIN32)
     target_sources(ivy-http PRIVATE 
         src/win32/initialise_handle.cxx
@@ -27,6 +37,20 @@ if(WIN32)
         src/win32/response_writer.cxx
         src/win32/response.cxx
         src/win32/header.cxx)
+
+    target_sources(ivy-http PRIVATE
+        include/ivy/win32/httpsys.hxx
+        include/ivy/win32/httpsys/header.hxx
+        include/ivy/win32/httpsys/initialise_handle.hxx
+        include/ivy/win32/httpsys/request_context.hxx
+        include/ivy/win32/httpsys/request_controller.hxx
+        include/ivy/win32/httpsys/request_queue.hxx
+        include/ivy/win32/httpsys/response.hxx
+        include/ivy/win32/httpsys/response_writer.hxx
+        include/ivy/win32/httpsys/server_session.hxx
+        include/ivy/win32/httpsys/service.hxx
+        include/ivy/win32/httpsys/url_group.hxx
+    )
 
     target_link_libraries(ivy-http PUBLIC httpapi WIL::WIL)
 endif()

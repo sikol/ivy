@@ -9,9 +9,9 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include <ivy/check.hxx>
-#include <ivy/trace.hxx>
 #include <ivy/unexpected.hxx>
 
 namespace ivy {
@@ -22,12 +22,11 @@ namespace ivy {
 
         template <typename Error>
         class unexpected {
-        private:
             Error _error;
 
         public:
-            unexpected(Error const &error);
-            unexpected(Error &&error);
+            explicit unexpected(Error const &error);
+            explicit unexpected(Error &&error);
 
             auto error() const noexcept -> Error const &;
             auto error() noexcept -> Error &;
@@ -69,15 +68,12 @@ namespace ivy {
 
     template <typename T, typename Error>
     class expected {
-        std::optional<T> _value;
-        std::optional<Error> _error;
+        std::variant<T, Error> _state;
 
     public:
         template <typename V>
+        requires (!std::same_as<std::remove_cvref_t<V>, expected<T, Error>>)
         expected(V &&value) noexcept;
-
-        template <typename V>
-        expected(V const &value);
 
         template <typename E>
         expected(detail::unexpected<E> &&error) noexcept;
@@ -85,12 +81,12 @@ namespace ivy {
         template <typename E>
         expected(detail::unexpected<E> const &error);
 
-        explicit operator bool() const;
+        [[nodiscard]] explicit operator bool() const;
 
-        auto operator*() const noexcept -> T const &;
-        auto operator*() noexcept -> T &;
-        auto operator->() const noexcept -> T const *;
-        auto operator->() noexcept -> T *;
+        [[nodiscard]] auto operator*() const noexcept -> T const &;
+        [[nodiscard]] auto operator*() noexcept -> T &;
+        [[nodiscard]] auto operator->() const noexcept -> T const *;
+        [[nodiscard]] auto operator->() noexcept -> T *;
 
         auto error() const noexcept -> Error const &;
 
@@ -101,101 +97,102 @@ namespace ivy {
             std::same_as<std::remove_cvref_t<Error>, ivy::error>;
 
         template <typename Nested>
-        auto or_throw_with_nested(Nested &&e) -> T &&requires
+        auto or_throw_with_nested(Nested &&n) -> T &&requires
             std::derived_from<std::remove_cvref_t<Error>, std::exception>;
 
         template <typename Nested>
-        auto or_throw_with_nested(Nested &&e) -> T &&requires
+        auto or_throw_with_nested(Nested &&n) -> T &&requires
             std::same_as<std::remove_cvref_t<Error>, ivy::error>;
     };
 
     template <typename T, typename Error>
     template <typename V>
-    expected<T, Error>::expected(V &&value) noexcept
-        : _value(std::move(value))
-    {
-    }
-
-    template <typename T, typename Error>
-    template <typename V>
-    expected<T, Error>::expected(V const &value)
-        : _value(value)
+    requires (!std::same_as<std::remove_cvref_t<V>, expected<T, Error>>)
+        expected<T, Error>::expected(V && value) noexcept
+        : _state(std::forward<V>(value))
     {
     }
 
     template <typename T, typename Error>
     template <typename E>
     expected<T, Error>::expected(detail::unexpected<E> &&error) noexcept
-        : _error(std::move(error.error()))
+        : _state(std::move(error.error()))
     {
     }
 
     template <typename T, typename Error>
     template <typename E>
     expected<T, Error>::expected(detail::unexpected<E> const &error)
-        : _error(error.error())
+        : _state(error.error())
     {
     }
 
     template <typename T, typename Error>
     expected<T, Error>::operator bool() const
     {
-        return _value.has_value();
+        return get_if<T>(&_state) != nullptr;
     }
 
     template <typename T, typename Error>
     auto expected<T, Error>::operator*() const noexcept -> T const &
     {
-        IVY_CHECK(_value.has_value(), "expected<>::operator*: no value");
-        return *_value;
+        auto *v = get_if<T>(&_state);
+        IVY_CHECK(v != nullptr, "expected<>: no value");
+        return *v;
     }
 
     template <typename T, typename Error>
     auto expected<T, Error>::operator*() noexcept -> T &
     {
-        IVY_CHECK(_value.has_value(), "expected<>::operator*: no value");
-        return *_value;
+        auto *v = get_if<T>(&_state);
+        IVY_CHECK(v != nullptr, "expected<>: no value");
+        return *v;
     }
 
     template <typename T, typename Error>
     auto expected<T, Error>::operator->() const noexcept -> T const *
     {
-        IVY_CHECK(_value.has_value(), "expected<>::operator->: no value");
-        return std::addressof(*_value);
+        auto *v = get_if<T>(&_state);
+        IVY_CHECK(v != nullptr, "expected<>: no value");
+        return *v;
     }
 
     template <typename T, typename Error>
     auto expected<T, Error>::operator->() noexcept -> T *
     {
-        IVY_CHECK(_value.has_value(), "expected<>::operator->: no value");
-        return std::addressof(*_value);
+        auto *v = get_if<T>(&_state);
+        IVY_CHECK(v != nullptr, "expected<>: no value");
+        return v;
     }
 
     template <typename T, typename Error>
     auto expected<T, Error>::error() const noexcept -> Error const &
     {
-        IVY_CHECK(_error.has_value(), "expected<>::error(): no error");
-        return *_error;
+        auto *e = get_if<Error>(&_state);
+        IVY_CHECK(e != nullptr, "expected<>: no error");
+        return *e;
     }
 
     template <typename T, typename Error>
     auto expected<T, Error>::or_throw() -> T &&requires
         std::derived_from<std::remove_cvref_t<Error>, std::exception>
     {
-        if (*this)
-            return std::move(*_value);
+        auto *v = get_if<T>(&_state);
+        if (v)
+            return std::move(*v);
 
-        throw *_error;
+        throw error();
     }
 
     template <typename T, typename Error>
     auto expected<T, Error>::or_throw()
         -> T &&requires std::same_as<std::remove_cvref_t<Error>, ivy::error>
     {
-        if (*this)
-            return std::move(*_value);
+        auto *v = get_if<T>(&_state);
+        if (v)
+            return std::move(*v);
 
-        _error->rethrow();
+        error().rethrow();
     }
 
     template <typename T, typename Error>
@@ -203,11 +200,12 @@ namespace ivy {
     auto expected<T, Error>::or_throw_with_nested(Nested &&n) -> T &&requires
         std::derived_from<std::remove_cvref_t<Error>, std::exception>
     {
-        if (*this)
-            return std::move(*_value);
+        auto *v = get_if<T>(&_state);
+        if (v)
+            return std::move(*v);
 
         try {
-            throw *_error;
+            throw error();
         } catch (...) {
             std::throw_with_nested(std::forward<Nested>(n));
         }
@@ -218,11 +216,12 @@ namespace ivy {
     auto expected<T, Error>::or_throw_with_nested(Nested &&n)
         -> T &&requires std::same_as<std::remove_cvref_t<Error>, ivy::error>
     {
-        if (*this)
-            return std::move(*_value);
+        auto *v = get_if<T>(&_state);
+        if (v)
+            return std::move(*v);
 
         try {
-            _error->rethrow();
+            error().rethrow();
         } catch (...) {
             std::throw_with_nested(std::forward<Nested>(n));
         }

@@ -7,21 +7,31 @@
 
 #include <ivy/error.hxx>
 
-ivy::error return_runtime_error(std::string what)
+#ifdef _MSC_VER
+// Unreachable code; triggered by REQUIRE_THROWS_AS.
+#    pragma warning(disable : 4702)
+#endif
+
+auto return_runtime_error(std::string const &what) -> ivy::error
 {
     return ivy::make_error<std::runtime_error>(what);
 }
 
-ivy::error return_success()
+auto return_invalid_argument() -> ivy::error
+{
+    return ivy::make_error(std::errc::invalid_argument);
+}
+
+auto return_success() -> ivy::error
 {
     return ivy::error();
 }
 
-TEST_CASE("ivy::error returns an exception", "[ivy][error]")
+TEST_CASE("ivy:error: exception", "[ivy][error]")
 {
     auto err = return_runtime_error("this is a test error");
     REQUIRE(!err);
-    REQUIRE(std::strcmp(err.what(), "this is a test error") == 0);
+    REQUIRE(err.what() == "this is a test error");
 
     REQUIRE(err.is<std::exception>());
     REQUIRE(err.is<std::runtime_error>());
@@ -30,13 +40,27 @@ TEST_CASE("ivy::error returns an exception", "[ivy][error]")
 
     REQUIRE(!err.is<std::domain_error>());
     REQUIRE(err.get<std::domain_error>() == nullptr);
+
+    REQUIRE_THROWS_AS(err.rethrow(), std::runtime_error);
 }
 
-TEST_CASE("ivy::error returns success", "[ivy][error]")
+TEST_CASE("ivy:error: std::error_code", "[ivy][error]")
+{
+    auto err = return_invalid_argument();
+    REQUIRE(!err);
+
+    REQUIRE(!is<std::exception>(err));
+    REQUIRE(!is<std::runtime_error>(err));
+    REQUIRE(!is<std::system_error>(err));
+    REQUIRE(is<std::error_code>(err));
+    REQUIRE(err == std::errc::invalid_argument);
+}
+
+TEST_CASE("ivy:error returns success", "[ivy][error]")
 {
     auto err = return_success();
     REQUIRE(err);
-    REQUIRE(std::strcmp(err.what(), "success") == 0);
+    REQUIRE(err.what() == "success");
     REQUIRE(!err.is<std::exception>());
     REQUIRE(err.get<std::exception>() == nullptr);
 }

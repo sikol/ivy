@@ -13,15 +13,13 @@ namespace ivy::win32 {
 
     auto make_httpsys_service()
         -> expected<std::unique_ptr<http::service>, error>
-    {
+    try {
         SECURITY_ATTRIBUTES attrs{};
         attrs.nLength = sizeof(attrs);
 
-        try {
-            return std::make_unique<httpsys::service>(std::nullopt, &attrs, 0);
-        } catch (std::exception const &) {
-            return make_unexpected(make_error(std::current_exception()));
-        }
+        return std::make_unique<httpsys::service>(std::nullopt, &attrs, 0);
+    } catch (...) {
+        return make_unexpected(make_error(std::current_exception()));
     }
 
 } // namespace ivy::win32
@@ -54,47 +52,40 @@ namespace ivy::win32::httpsys {
 
     auto service::add_listener(http::http_listener const &lsn)
         -> expected<void, error>
-    {
-        auto lsnp = std::unique_ptr<http::http_listener>(
-            new (std::nothrow) http::http_listener(lsn));
+    try {
+        auto lsnp = std::make_unique<http::http_listener>(lsn);
 
-        if (!lsnp)
-            return make_unexpected(make_error(std::errc::not_enough_memory));
+        auto wstr =
+            transcode<wstring>(str(lsn.prefix))
+                .or_throw_with_nested(http::http_error("invalid listener URI"));
 
-        auto wstr = transcode<wstring>(str(lsn.prefix));
-        if (!wstr)
-            return make_unexpected(make_error<http::http_error>(
-                "invalid listener URI: cannot transcode"));
-
-        auto r = _url_group.add_url(
-            *wstr, reinterpret_cast<HTTP_URL_CONTEXT>(lsnp.get()));
-        if (!r)
-            return make_unexpected(make_error(r.error()));
+        _url_group.add_url(wstr, reinterpret_cast<HTTP_URL_CONTEXT>(lsnp.get()))
+            .or_throw_with_nested(
+                http::http_error("cannot add listener to URL group"));
 
         _listeners.push_back(std::move(lsnp));
 
         return {};
+    } catch (...) {
+        return make_unexpected(make_error(std::current_exception()));
     }
 
     auto service::run() -> expected<void, error>
-    {
-        if (auto r = _url_group.set_request_queue(_request_queue); !r) {
-            return make_unexpected(make_error<http::http_error>(
-                std::format("cannot add URL group to request queue: {}",
-                            r.error().message())));
-        }
+    try {
+        _url_group.set_request_queue(_request_queue)
+            .or_throw_with_nested(
+                http::http_error("cannot add URL group to request queue"));
 
         for (;;) {
-            auto req = _request_queue.read_request();
+            auto req = _request_queue.read_request().or_throw();
 
-            if (!req)
-                return make_unexpected(req.error());
-
-            std::thread([this, req = std::move(*req)]() mutable {
+            std::thread([this, req = std::move(req)]() mutable {
                 request_controller cllr(this, std::move(req));
                 cllr.run();
             }).detach();
         }
+    } catch (...) {
+        return make_unexpected(make_error(std::current_exception()));
     }
 
 } // namespace ivy::win32::httpsys

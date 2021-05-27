@@ -5,11 +5,15 @@
 
 #include <iterator>
 #include <ranges>
+#include <format>
+#include <span>
+#include <cstddef>
 
 #include <ivy/charenc/error.hxx>
 #include <ivy/charenc/icu/error.hxx>
 #include <ivy/charenc/icu/ucnv.hxx>
 #include <ivy/noncopyable.hxx>
+#include <ivy/trace.hxx>
 
 #include <unicode/ucnv.h>
 

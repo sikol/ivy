@@ -1,7 +1,22 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:Boolean x:Key="/Default/CodeInspection/ExcludedFiles/FileMasksToSkip/=_002A_002Emin_002Ejs/@EntryIndexedValue">False</s:Boolean>
+	<s:Boolean x:Key="/Default/CodeInspection/ExcludedFiles/FileMasksToSkip/=_005Freferences_002Ejs/@EntryIndexedValue">False</s:Boolean>
+	<s:Boolean x:Key="/Default/CodeInspection/ExcludedFiles/FileMasksToSkip/=package_002Dlock_002Ejson/@EntryIndexedValue">False</s:Boolean>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=DB94C55F_002D6B9A_002D4AAE_002D80D7_002D29FD8153E6B5_002Fd_003Avcpkg/@EntryIndexedValue">ExplicitlyExcluded</s:String>
+	<s:String x:Key="/Default/CodeStyle/Naming/CppNaming/Rules/=Class_0020and_0020struct_0020fields/@EntryIndexedValue">&lt;NamingElement Priority="11"&gt;&lt;Descriptor Static="Indeterminate" Constexpr="Indeterminate" Const="Indeterminate" Volatile="Indeterminate" Accessibility="NOT_APPLICABLE"&gt;&lt;type Name="class field" /&gt;&lt;type Name="struct field" /&gt;&lt;/Descriptor&gt;&lt;Policy Inspect="True" Prefix="_" Suffix="" Style="aa_bb" /&gt;&lt;/NamingElement&gt;</s:String>
 	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksThirdParty/=_002A_002A_005Cvcpkg_005Finstalled_005C_002A_002A/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksThirdParty/=_005Freferences_002Ejs/@EntryIndexedValue">False</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksThirdParty/=node_005Fmodules_005C_002A_002A/@EntryIndexedValue">False</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksThirdParty/=wwwroot_005Clib_005C_002A_002A/@EntryIndexedValue">False</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksThirdParty/=_005Freferences_002Ejs/@EntryIndexRemoved">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksThirdParty/=node_005Fmodules_005C_002A_002A/@EntryIndexRemoved">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksThirdParty/=out_005C_002A_002A/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksThirdParty/=wwwroot_005Clib_005C_002A_002A/@EntryIndexRemoved">True</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksToSkip/=_002A_002Emin_002Ejs/@EntryIndexedValue">False</s:Boolean>
-	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksToSkip/=package_002Dlock_002Ejson/@EntryIndexedValue">False</s:Boolean></wpf:ResourceDictionary>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksToSkip/=package_002Dlock_002Ejson/@EntryIndexedValue">False</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksToSkip/=_002A_002Emin_002Ejs/@EntryIndexRemoved">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksToSkip/=package_002Dlock_002Ejson/@EntryIndexRemoved">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksToSkip/=vcpkg_005C_002A_002A/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FileMasksToSkip/=_003Civy_003E_005Cvcpkg_005C_002A_002A/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Environment/ExcludedFiles/FilesAndFoldersToSkip/=DB94C55F_002D6B9A_002D4AAE_002D80D7_002D29FD8153E6B5_002Fd_003Avcpkg/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/Housekeeping/ExcludedProjects/ProjectMasksToIgnore/=_002A_002A_005Cvcpkg_005Finstalled_005C_002A_002A/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

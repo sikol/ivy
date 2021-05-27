@@ -14,7 +14,19 @@ target_compile_options(ivy-odbc PRIVATE
      $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
           ${IVY_CLANG_FLAGS}>)
 
-target_sources(ivy-odbc PRIVATE src/odbc.cxx)
+target_sources(ivy-odbc PRIVATE 
+    src/odbc.cxx
+)
+
+target_sources(ivy-odbc PRIVATE
+    include/ivy/db/odbc/connect.hxx
+    include/ivy/db/odbc/connection.hxx
+    include/ivy/db/odbc/query.hxx
+    include/ivy/db/odbc/query_result.hxx
+    include/ivy/db/odbc/result_set.hxx
+    include/ivy/db/odbc/row.hxx
+    include/ivy/db/odbc/value.hxx
+)
 
 if(WIN32)
     target_link_libraries(ivy-odbc PUBLIC odbc32 WIL::WIL)

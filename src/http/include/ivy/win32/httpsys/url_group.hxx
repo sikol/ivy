@@ -17,6 +17,7 @@
 #include <ivy/expected.hxx>
 #include <ivy/string.hxx>
 #include <ivy/noncopyable.hxx>
+#include <ivy/error.hxx>
 
 namespace ivy::win32::httpsys {
 
@@ -54,10 +55,10 @@ namespace ivy::win32::httpsys {
             -> HTTP_URL_GROUP_ID;
 
         [[nodiscard]] auto set_request_queue(request_queue &)
-            -> expected<void, std::error_code>;
+            -> expected<void, error>;
 
         [[nodiscard]] auto add_url(wstring const &url, HTTP_URL_CONTEXT context)
-            -> expected<void, std::error_code>;
+            -> expected<void, error>;
     };
 
 } // namespace ivy::win32::httpsys

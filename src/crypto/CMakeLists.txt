@@ -14,9 +14,19 @@ target_compile_options(ivy-odbc PRIVATE
      $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
           ${IVY_CLANG_FLAGS}>)
 
+target_sources(ivy-crypto PRIVATE
+    include/ivy/crypto/hash.hxx
+    include/ivy/crypto/pbkdf2.hxx
+)
+
 if(WIN32)
     target_sources(ivy-crypto PRIVATE 
         src/win32/bcrypt.cxx
         src/win32/hash.cxx)
+
+    target_sources(ivy-crypto PRIVATE
+        include/ivy/win32/bcrypt.hxx
+    )
+
     target_link_libraries(ivy-crypto PUBLIC bcrypt WIL::WIL)
 endif()

@@ -25,10 +25,107 @@ target_sources(ivy PRIVATE
     src/charenc.cxx
     src/db.cxx)
     
+target_sources(ivy PRIVATE
+    include/ivy/byte.hxx
+    include/ivy/charenc.hxx
+    include/ivy/check.hxx
+    include/ivy/csv.hxx
+    include/ivy/datum.hxx
+    include/ivy/db.hxx
+    include/ivy/error.hxx
+    include/ivy/exception.hxx
+    include/ivy/expected.hxx
+    include/ivy/flagset.hxx
+    include/ivy/format.hxx
+    include/ivy/hash.hxx
+    include/ivy/lazy.hxx
+    include/ivy/log.hxx
+    include/ivy/noncopyable.hxx
+    include/ivy/overload.hxx
+    include/ivy/scope_guard.hxx
+    include/ivy/siphash.hxx
+    include/ivy/static_vector.hxx
+    include/ivy/string.hxx
+    include/ivy/string_literal.hxx
+    include/ivy/trace.hxx
+    include/ivy/unexpected.hxx
+
+    include/ivy/algorithm/bintext.hxx
+
+    include/ivy/buffer/buffer.hxx
+    include/ivy/buffer/circular_buffer.hxx
+    include/ivy/buffer/dynamic_buffer.hxx
+    include/ivy/buffer/fixed_buffer.hxx
+    include/ivy/buffer/pmr_buffer.hxx
+    include/ivy/buffer/range_buffer.hxx
+
+    include/ivy/charenc/icu/bytereader.hxx
+    include/ivy/charenc/icu/encoding_traits.hxx
+    include/ivy/charenc/icu/error.hxx
+    include/ivy/charenc/icu/ucnv.hxx
+    include/ivy/charenc/icu/ucnv_charconv.hxx
+    include/ivy/charenc/icu/verifier.hxx
+
+    include/ivy/charenc/ascii.hxx
+    include/ivy/charenc/charconv.hxx
+    include/ivy/charenc/error.hxx
+    include/ivy/charenc/system.hxx
+    include/ivy/charenc/system_wide.hxx
+    include/ivy/charenc/utf16.hxx
+    include/ivy/charenc/utf32.hxx
+    include/ivy/charenc/utf8.hxx
+
+    include/ivy/config/lex.hxx
+    include/ivy/config/parse.hxx
+
+    include/ivy/datum/boolean.hxx
+    include/ivy/datum/integer.hxx
+    include/ivy/datum/null.hxx
+    include/ivy/datum/string.hxx
+
+    include/ivy/db/connection.hxx
+    include/ivy/db/error.hxx
+    include/ivy/db/query.hxx
+    include/ivy/db/query_result.hxx
+    include/ivy/db/result_set.hxx
+    include/ivy/db/row.hxx
+    include/ivy/db/value.hxx
+
+    include/ivy/io/channel.hxx
+    include/ivy/io/pmrchannel.hxx
+    include/ivy/io/stringchannel.hxx
+    include/ivy/io/textchannel.hxx
+    include/ivy/io/transcodechannel.hxx
+
+    include/ivy/iterator/byte_decode.hxx
+    include/ivy/iterator/null.hxx
+    include/ivy/iterator/static_cast.hxx
+
+    include/ivy/log/ostream_sink.hxx
+
+    include/ivy/net/uri.hxx
+
+    include/ivy/string/convert.hxx
+    include/ivy/string/iostream.hxx
+    include/ivy/string/join.hxx
+    include/ivy/string/match.hxx
+    include/ivy/string/split.hxx
+    include/ivy/string/transcode.hxx
+    include/ivy/string/trim.hxx
+ )
+
 if(WIN32)
     target_sources(ivy PRIVATE 
         src/win32/error.cxx 
-        src/win32/registry.cxx)
+        src/win32/registry.cxx
+    )
+
+    target_sources(ivy PRIVATE
+        include/ivy/win32/error.hxx
+        include/ivy/win32/heap.hxx
+        include/ivy/win32/registry.hxx
+        include/ivy/win32/windows.hxx
+    )
 
     target_link_libraries(ivy PUBLIC WIL::WIL)
 endif()

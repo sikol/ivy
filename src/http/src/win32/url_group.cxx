@@ -6,13 +6,14 @@
 #include <format>
 
 #include <ivy/win32/windows.hxx>
+
 #include <http.h>
 
-#include <ivy/win32/httpsys/url_group.hxx>
-#include <ivy/win32/httpsys/server_session.hxx>
-#include <ivy/win32/httpsys/request_queue.hxx>
-#include <ivy/win32/error.hxx>
 #include <ivy/http/service.hxx>
+#include <ivy/win32/error.hxx>
+#include <ivy/win32/httpsys/request_queue.hxx>
+#include <ivy/win32/httpsys/server_session.hxx>
+#include <ivy/win32/httpsys/url_group.hxx>
 
 namespace ivy::win32::httpsys {
 
@@ -20,19 +21,17 @@ namespace ivy::win32::httpsys {
     {
         auto r = ::HttpCreateUrlGroup(session.get_session_id(), &_handle, 0);
 
-        if (r != NO_ERROR) {
-            auto err = make_win32_error(r);
+        if (r != NO_ERROR)
             throw http::http_error(
-                std::format("HttpCreateUrlGroup() failed: {}", err.message()));
-        }
+                std::format("HttpCreateUrlGroup() failed: {}",
+                            make_win32_error(r).message()));
     }
 
     url_group::url_group(url_group &&) noexcept = default;
 
     url_group::~url_group() = default;
 
-    auto url_group::operator=(url_group &&) noexcept
-        -> url_group & = default;
+    auto url_group::operator=(url_group &&) noexcept -> url_group & = default;
 
     auto url_group::get_url_group_id() const noexcept -> HTTP_URL_GROUP_ID
     {
@@ -40,19 +39,19 @@ namespace ivy::win32::httpsys {
     }
 
     auto url_group::add_url(wstring const &url, HTTP_URL_CONTEXT context)
-        -> expected<void, std::error_code>
+        -> expected<void, error>
     {
-        auto ret =
+        auto const ret =
             ::HttpAddUrlToUrlGroup(_handle.get(), url.c_str(), context, 0);
 
         if (ret != NO_ERROR)
-            return make_unexpected(make_win32_error(ret));
+            return make_unexpected(make_error(make_win32_error(ret)));
 
         return {};
     }
 
     auto url_group::set_request_queue(request_queue &queue)
-        -> expected<void, std::error_code>
+        -> expected<void, error>
     {
         HTTP_BINDING_INFO binding{};
         binding.Flags.Present = 1;
@@ -64,9 +63,9 @@ namespace ivy::win32::httpsys {
                                            sizeof(binding));
 
         if (r != NO_ERROR)
-            return make_unexpected(make_win32_error(r));
+            return make_unexpected(make_error(make_win32_error(r)));
 
         return {};
     }
 
-}
+} // namespace ivy::win32::httpsys

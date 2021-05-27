@@ -9,6 +9,7 @@
 #include <ivy/datum/null.hxx>
 #include <ivy/db.hxx>
 #include <ivy/db/odbc/connect.hxx>
+#include <ivy/exception.hxx>
 #include <ivy/format.hxx>
 #include <ivy/string/transcode.hxx>
 
@@ -45,13 +46,15 @@ auto show_results(ivy::db::query_result_handle &qr) -> void
 }
 
 auto execute_query(ivy::db::connection_handle &conn,
-                   ivy::u16string const &query_text) -> void
+                   std::string const &query_text) -> void
 try {
-    auto query = conn->prepare_query(query_text).or_throw();
+    auto u16text = ivy::transcode<ivy::u16string>(query_text).or_throw();
+    auto query = conn->prepare_query(u16text).or_throw();
     auto result = query->execute().or_throw();
     show_results(result);
-} catch (ivy::db::db_error const &e) {
-    ivy::fprint(std::cerr, "{}\n", e.what());
+} catch (...) {
+    std::throw_with_nested(ivy::message<"DBCLI", 'E', "QUERYERROR">(
+        "Failed to execute the query"));
 }
 
 auto sqlrepl(ivy::db::connection_handle &conn) -> void
@@ -69,41 +72,35 @@ auto sqlrepl(ivy::db::connection_handle &conn) -> void
         if (query == "\\q")
             return;
 
-        auto u16query = ivy::transcode<ivy::u16string>(query);
-        if (!u16query) {
-            ivy::fprint(std::cerr,
-                        "cannot transcode query: {}\n",
-                        u16query.error().what());
-            continue;
+        try {
+            execute_query(conn, query);
+        } catch (...) {
+            ivy::print_current_exception(std::cerr);
         }
-
-        execute_query(conn, *u16query);
     }
 }
 
 int main(int, char **argv)
-{
+try {
     if (argv[1] == nullptr) {
         ivy::fprint(std::cerr, "usage: dbcli <connection-string>\n");
         return 1;
     }
 
     ivy::string connstr(argv[1]);
-    auto u16connstr = ivy::transcode<ivy::u16string>(connstr);
-    if (!u16connstr) {
-        ivy::fprint(std::cerr,
-                    "invalid connection string: {}\n",
-                    u16connstr.error().what());
-        return 1;
-    }
+    auto u16connstr =
+        ivy::transcode<ivy::u16string>(connstr).or_throw_with_nested(
+            ivy::message<"DBCLI", 'E', "CONNECT">("Invalid connection string"));
 
-    auto db = ivy::db::odbc::connect(*u16connstr);
-    if (!db) {
-        ivy::fprint(std::cerr, "connection failed: {}\n", db.error().what());
-        return 1;
-    }
+    auto db = ivy::db::odbc::connect(u16connstr)
+                  .or_throw_with_nested(ivy::message<"DBCLI", 'E', "CONNECT">(
+                      "Failed to connect to the database"));
 
     ivy::print("* Connected.  Type queries, or type '\\q' to exit.\n");
 
-    sqlrepl(*db);
+    sqlrepl(db);
+    return 0;
+} catch (...) {
+    ivy::print_current_exception(std::cerr);
+    return 1;
 }
