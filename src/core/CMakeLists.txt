@@ -29,6 +29,7 @@ target_sources(ivy PRIVATE
     include/ivy/byte.hxx
     include/ivy/charenc.hxx
     include/ivy/check.hxx
+    include/ivy/cmdline.hxx
     include/ivy/csv.hxx
     include/ivy/datum.hxx
     include/ivy/db.hxx
@@ -106,13 +107,14 @@ target_sources(ivy PRIVATE
     include/ivy/net/uri.hxx
 
     include/ivy/string/convert.hxx
+    include/ivy/string/format.hxx
     include/ivy/string/iostream.hxx
     include/ivy/string/join.hxx
     include/ivy/string/match.hxx
     include/ivy/string/split.hxx
     include/ivy/string/transcode.hxx
     include/ivy/string/trim.hxx
- )
+  )
 
 if(WIN32)
     target_sources(ivy PRIVATE 

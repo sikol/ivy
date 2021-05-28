@@ -74,7 +74,10 @@ namespace ivy {
         template <typename V>
         requires(!std::same_as<std::remove_cvref_t<V>, expected<T, Error>>)
             expected(V &&value)
-        noexcept;
+        noexcept
+            : _state(std::forward<V>(value))
+        {
+        }
 
         template <typename E>
         expected(detail::unexpected<E> &&error) noexcept;
@@ -105,15 +108,6 @@ namespace ivy {
         auto or_throw_with_nested(Nested &&n) && -> T requires
             std::same_as<std::remove_cvref_t<Error>, ivy::error>;
     };
-
-    template <typename T, typename Error>
-    template <typename V>
-    requires(!std::same_as<std::remove_cvref_t<V>, expected<T, Error>>)
-        expected<T, Error>::expected(V &&value)
-    noexcept
-        : _state(std::forward<V>(value))
-    {
-    }
 
     template <typename T, typename Error>
     template <typename E>

@@ -217,7 +217,9 @@ namespace ivy {
         // Rethrow the stored error object.
         [[noreturn]] auto rethrow() const -> void
         {
-            std::visit(overload{[](std::monostate const &) -> void {},
+            std::visit(overload{[](std::monostate const &) -> void {
+                                    throw std::runtime_error("success");
+                                },
                                 [](error_code_type const &ec) -> void {
                                     throw std::system_error(ec);
                                 },
@@ -225,6 +227,8 @@ namespace ivy {
                                     exc->rethrow();
                                 }},
                        _error_base);
+
+            throw std::runtime_error("rethrow of empty error type");
         }
 
         // is<T>(): test if the stored error is or derives from T.
@@ -270,7 +274,8 @@ namespace ivy {
     }
 
     template <>
-    inline auto get_if<std::error_code>(error const &e) -> std::error_code const *
+    inline auto get_if<std::error_code>(error const &e)
+        -> std::error_code const *
     {
         auto const &storage = e.storage();
         return std::visit(
@@ -285,15 +290,15 @@ namespace ivy {
             storage);
     }
 
-    template<typename T>
+    template <typename T>
     auto is(error const &e) -> bool
     {
         return get_if<T>(e) != nullptr;
     }
 
-    template<typename T>
-    auto operator==(error const &e, T errc) -> bool
-    requires std::is_error_code_enum_v<T>
+    template <typename T>
+    auto operator==(error const &e, T errc)
+        -> bool requires std::is_error_code_enum_v<T>
     {
         using std::make_error_code;
         auto *ec = get_if<std::error_code>(e);

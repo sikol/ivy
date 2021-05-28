@@ -7,10 +7,10 @@
 #define IVY_EXCEPTION_HXX_INCLUDED
 
 #include <exception>
+#include <format>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <format>
 
 #include <ivy/string_literal.hxx>
 
@@ -24,15 +24,30 @@ namespace ivy {
         std::string _formatted;
 
     public:
-        template<typename... Args>
-        message(Args&&... args)
+        message(message const &) = default;
+        message(message &&) noexcept = default;
+
+        explicit message()
+        try {
+            _formatted = std::format("{}-{}-{}, {}",
+                                     facility_text.value,
+                                     severity_text,
+                                     code_text.value,
+                                     format.value);
+        } catch (...) {
+        }
+
+        template <typename T1, typename... Rest>
+        requires(!std::same_as<std::remove_cvref_t<T1>,
+                               message>) explicit message(T1 &&t1,
+                                                          Rest &&...rest)
         try {
             _formatted = std::format(
                 "{}-{}-{}, {}",
                 facility_text.value,
                 severity_text,
                 code_text.value,
-                std::format(format.value, std::forward<Args>(args)...));
+                std::format(format.value, t1, std::forward<Rest>(rest)...));
         } catch (...) {
         }
 
@@ -51,6 +66,7 @@ namespace ivy {
         strm << e.what();
 
         strm << ".\n";
+
         try {
             std::rethrow_if_nested(e);
         } catch (std::exception const &e) {
@@ -76,6 +92,20 @@ namespace ivy {
     auto print_current_exception(std::ostream &strm, char prefix = '%') -> void
     {
         print_exception(strm, std::current_exception(), prefix);
+    }
+
+    template <typename char_type,
+              typename traits,
+              string_literal F,
+              char S,
+              string_literal C,
+              string_literal M>
+    auto operator<<(std::basic_ostream<char_type, traits> &strm,
+                    message<F, S, C, M> const &m)
+        -> std::basic_ostream<char_type, traits> &
+    {
+        strm << '%' << m.what() << ".\n";
+        return strm;
     }
 
 } // namespace ivy

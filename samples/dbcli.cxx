@@ -6,6 +6,7 @@
 #include <iostream>
 #include <ranges>
 
+#include <ivy/cmdline.hxx>
 #include <ivy/datum/null.hxx>
 #include <ivy/db.hxx>
 #include <ivy/db/odbc/connect.hxx>
@@ -21,6 +22,11 @@ using invalid_connection_string =
 
 using query_execution_error =
     ivy::message<"DBCLI", 'E', "QUERYERROR", "Failed to execute the query">;
+
+using db_connected = ivy::message<"DBCLI",
+                                  'I',
+                                  "CONNECTED",
+                                  "Connected to database; type \\q to quit">;
 
 auto format_value(ivy::db::value &v) -> std::string
 {
@@ -88,22 +94,27 @@ auto sqlrepl(ivy::db::connection_handle &conn) -> void
     }
 }
 
-int main(int, char **argv)
-try {
-    if (argv[1] == nullptr) {
-        ivy::fprint(std::cerr, "usage: dbcli <connection-string>\n");
-        return 1;
-    }
+struct dbcli_options {
+    ivy::u8string driver;
+    ivy::u8string connection_string;
+};
 
-    ivy::string connstr(argv[1]);
-    auto u16connstr =
-        ivy::transcode<ivy::u16string>(connstr).or_throw_with_nested(
-            invalid_connection_string());
+int main(int argc, char **argv)
+try {
+    ivy::cmdline<dbcli_options> cmdline;
+    cmdline.add_option(u8"driver", &dbcli_options::driver);
+    cmdline.add_argument(u8"connection-string",
+                         &dbcli_options::connection_string);
+
+    auto options = cmdline.parse(argc, argv).or_throw();
+
+    auto u16connstr = ivy::transcode<ivy::u16string>(options.connection_string)
+                          .or_throw_with_nested(invalid_connection_string());
 
     auto db = ivy::db::odbc::connect(u16connstr)
                   .or_throw_with_nested(db_connection_error());
 
-    ivy::print("* Connected.  Type queries, or type '\\q' to exit.\n");
+    std::cout << db_connected();
 
     sqlrepl(db);
     return 0;
