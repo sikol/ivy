@@ -10,64 +10,35 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <format>
 
 #include <ivy/string_literal.hxx>
 
 namespace ivy {
 
-    class exception : public std::exception {
-        std::string _error_text;
-        mutable std::string _formatted;
+    template <string_literal facility_text,
+              char severity_text,
+              string_literal code_text,
+              string_literal format>
+    class message : public std::exception {
+        std::string _formatted;
 
     public:
-        exception(std::string error_text)
-            : _error_text(std::move(error_text))
-        {
+        template<typename... Args>
+        message(Args&&... args)
+        try {
+            _formatted = std::format(
+                "{}-{}-{}, {}",
+                facility_text.value,
+                severity_text,
+                code_text.value,
+                std::format(format.value, std::forward<Args>(args)...));
+        } catch (...) {
         }
-
-        ~exception() override = default;
-
-        [[nodiscard]] virtual auto facility() const noexcept
-            -> char const * = 0;
-        [[nodiscard]] virtual auto severity() const noexcept -> char = 0;
-        [[nodiscard]] virtual auto code() const noexcept -> char const * = 0;
 
         auto what() const noexcept -> char const * override
         {
-            if (_formatted.empty())
-                _formatted = std::format("{}-{}-{}, {}",
-                                         facility(),
-                                         severity(),
-                                         code(),
-                                         _error_text);
-
             return _formatted.c_str();
-        }
-    };
-
-    template <string_literal facility_text,
-              char severity_text,
-              string_literal code_text>
-    class message : public exception {
-    public:
-        message(std::string error_text)
-            : exception(std::move(error_text))
-        {
-        }
-
-        [[nodiscard]] auto facility() const noexcept -> char const * override
-        {
-            return facility_text.value;
-        }
-
-        [[nodiscard]] auto severity() const noexcept -> char override
-        {
-            return severity_text;
-        }
-
-        [[nodiscard]] auto code() const noexcept -> char const * override
-        {
-            return code_text.value;
         }
     };
 

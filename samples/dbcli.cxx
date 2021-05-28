@@ -13,6 +13,15 @@
 #include <ivy/format.hxx>
 #include <ivy/string/transcode.hxx>
 
+using db_connection_error =
+    ivy::message<"DBCLI", 'E', "CONNECT", "Failed to connect to the database">;
+
+using invalid_connection_string =
+    ivy::message<"DBCLI", 'E', "INVCONNSTR", "Invalid connection string">;
+
+using query_execution_error =
+    ivy::message<"DBCLI", 'E', "QUERYERROR", "Failed to execute the query">;
+
 auto format_value(ivy::db::value &v) -> std::string
 {
     auto d = v.as_datum().or_throw();
@@ -53,8 +62,7 @@ try {
     auto result = query->execute().or_throw();
     show_results(result);
 } catch (...) {
-    std::throw_with_nested(ivy::message<"DBCLI", 'E', "QUERYERROR">(
-        "Failed to execute the query"));
+    std::throw_with_nested(query_execution_error());
 }
 
 auto sqlrepl(ivy::db::connection_handle &conn) -> void
@@ -90,11 +98,10 @@ try {
     ivy::string connstr(argv[1]);
     auto u16connstr =
         ivy::transcode<ivy::u16string>(connstr).or_throw_with_nested(
-            ivy::message<"DBCLI", 'E', "CONNECT">("Invalid connection string"));
+            invalid_connection_string());
 
     auto db = ivy::db::odbc::connect(u16connstr)
-                  .or_throw_with_nested(ivy::message<"DBCLI", 'E', "CONNECT">(
-                      "Failed to connect to the database"));
+                  .or_throw_with_nested(db_connection_error());
 
     ivy::print("* Connected.  Type queries, or type '\\q' to exit.\n");
 

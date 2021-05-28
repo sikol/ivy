@@ -24,11 +24,11 @@ TEST_CASE("ivy:expected: basic", "[ivy][expected]")
     REQUIRE(ok);
     REQUIRE(*ok == 42);
 
-    REQUIRE_NOTHROW(ok.or_throw());
+    REQUIRE_NOTHROW(std::move(ok).or_throw());
 
     auto fail = fail_function();
     REQUIRE(!fail);
     REQUIRE(fail.error() == std::errc::invalid_argument);
 
-    REQUIRE_THROWS_AS(fail.or_throw(), std::system_error);
+    REQUIRE_THROWS_AS(std::move(fail).or_throw(), std::system_error);
 }
