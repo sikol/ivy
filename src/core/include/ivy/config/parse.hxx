@@ -5,14 +5,13 @@
 
 #include <cstdint>
 #include <optional>
-#include <string>
-#include <string_view>
 #include <variant>
 #include <iosfwd>
 #include <memory>
 #include <stdexcept>
 
 #include <ivy/expected.hxx>
+#include <ivy/string.hxx>
 
 namespace ivy::config {
 
@@ -22,18 +21,18 @@ namespace ivy::config {
 
     class datum {
     public:
-        using storage_type = std::variant<std::monostate, bool, std::string_view, std::int64_t>;
+        using storage_type = std::variant<std::monostate, bool, string, std::int64_t>;
 
     private:
         storage_type _value;
 
     public:
-        using string_type = std::string_view;
+        using string_type = string;
         using int_type = std::int64_t;
 
         datum();
         explicit datum(bool);
-        explicit datum(std::string_view);
+        explicit datum(string);
         explicit datum(std::int64_t);
 
         auto storage() const noexcept -> storage_type const &;
@@ -44,11 +43,10 @@ namespace ivy::config {
     auto as_bool(datum const &value) -> std::optional<bool>;
     auto as_string(datum const &value) -> std::optional<datum::string_type>;
     auto as_int(datum const &value) -> std::optional<datum::int_type>;
-    auto str(datum const &value) -> std::string;
+    auto str(datum const &value) -> string;
 
-    auto operator==(datum const &d, std::string const &s) -> bool;
-    auto operator==(datum const &d, std::string_view sv) -> bool;
-    auto operator==(datum const &d, char const *s) -> bool;
+    auto operator==(datum const &d, string const &s) -> bool;
+    auto operator==(datum const &d, string::value_type const *s) -> bool;
     auto operator==(datum const &d, bool b) -> bool;
     auto operator==(datum const &d, std::int64_t i) -> bool;
 
@@ -87,8 +85,6 @@ namespace ivy::config {
     };
 
     struct config {
-        std::shared_ptr<std::string> text;
-
         std::vector<item> items;
     };
 
@@ -101,6 +97,6 @@ namespace ivy::config {
         auto error() const noexcept -> std::string const &;
     };
 
-    auto parse(std::string const &text) -> expected<config, config_error>;
+    auto parse(string const &text) -> expected<config, config_error>;
 
 } // namespace ivy::config

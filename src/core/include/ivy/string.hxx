@@ -121,14 +121,35 @@ namespace ivy {
 
         auto begin() const noexcept -> const_iterator;
         auto end() const noexcept -> const_iterator;
+        auto cbegin() const noexcept -> const_iterator;
+        auto cend() const noexcept -> const_iterator;
     };
 
-    using string = basic_string<system_encoding>;
+    // System narrow (multibyte) string - may not be Unicode.
+    using cstring = basic_string<system_encoding>;
+
+    // ASCII string.
     using astring = basic_string<ascii_encoding>;
+
+    // System wide (wchar_t) string - may not be Unicode.
     using wstring = basic_string<system_wide_encoding>;
+
+    // UTF-8-encoded string.
     using u8string = basic_string<utf8_encoding>;
+
+    // UTF-16-encoded string.
     using u16string = basic_string<utf16_encoding>;
+
+    // UTF-32-encoded string.
     using u32string = basic_string<utf32_encoding>;
+
+    // Ivy's native string type; currently this is UTF-32, because many C++ APIs are
+    // designed on the assumption that one char value is one character.  For example,
+    // std::basic_regex cannot be used with UTF-8 or UTF-16 strings.
+    //
+    // In the future we might want to consider a different approach, such as using
+    // UTF-8 for storage and providing an interface to iterate over characters.
+    using string = u32string;
 
     template <character_encoding Encoding, typename Alloc>
     basic_string<Encoding, Alloc>::basic_string() = default;
@@ -315,6 +336,18 @@ namespace ivy {
             return nullptr;
 
         return _storage->data.data() + _start + _len;
+    }
+
+    template <character_encoding Encoding, typename Alloc>
+    auto basic_string<Encoding, Alloc>::cbegin() const noexcept -> const_iterator
+    {
+        return begin();
+    }
+
+    template <character_encoding Encoding, typename Alloc>
+    auto basic_string<Encoding, Alloc>::cend() const noexcept -> const_iterator
+    {
+        return end();
     }
 
     template <character_encoding Encoding, typename Alloc>

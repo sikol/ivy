@@ -7,6 +7,7 @@
 #define IVY_STRING_TRANSCODE_HXX_INCLUDED
 
 #include <ivy/string.hxx>
+#include <ivy/charenc.hxx>
 
 namespace ivy {
 

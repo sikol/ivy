@@ -10,8 +10,13 @@
 #include <cctype>
 #include <cstdint>
 #include <regex>
-#include <string_view>
+#include <span>
 #include <utility>
+
+#include <srell.hpp>
+
+#include <ivy/regex.hxx>
+#include <ivy/string.hxx>
 
 namespace ivy {
 
@@ -41,11 +46,11 @@ namespace ivy {
 
     } // namespace detail
 
-    template <typename Char, typename Traits>
-    auto match_string(std::basic_string_view<Char, Traits> s,
-                      std::basic_string_view<Char, Traits> prefix)
-        -> std::pair<std::optional<std::basic_string_view<Char, Traits>>,
-                     std::basic_string_view<Char, Traits>>
+    template <typename encoding, typename allocator>
+    auto match_string(basic_string<encoding, allocator> const &s,
+                      basic_string<encoding, allocator> const &prefix)
+        -> std::pair<std::optional<basic_string<encoding, allocator>>,
+                     basic_string<encoding, allocator>>
     {
         if (prefix.size() > s.size())
             return {{}, s};
@@ -57,9 +62,28 @@ namespace ivy {
         return {prefix, s.substr(prefix.size())};
     }
 
-    template <typename Int, typename Char, typename Traits>
-    auto match_int(std::basic_string_view<Char, Traits> s, unsigned base = 10)
-        -> std::pair<std::optional<Int>, std::basic_string_view<Char, Traits>>
+    template <typename encoding, typename allocator>
+    auto match_string(basic_string<encoding, allocator> const &s,
+                      typename encoding::char_type const *prefix)
+        -> std::pair<std::optional<basic_string<encoding, allocator>>,
+                     basic_string<encoding, allocator>>
+    {
+        std::span<typename encoding::char_type const> pspan(
+            prefix, encoding::length(prefix));
+
+        if (pspan.size() > s.size())
+            return {{}, s};
+
+        auto s_prefix = s.substr(0, pspan.size());
+        if (!std::ranges::equal(s_prefix, pspan))
+            return {{}, s};
+
+        return {s_prefix, s.substr(s_prefix.size())};
+    }
+
+    template <typename Int, typename encoding, typename allocator>
+    auto match_int(basic_string<encoding, allocator> s, unsigned base = 10)
+        -> std::pair<std::optional<Int>, basic_string<encoding, allocator>>
     {
         auto begin = s.begin();
         auto end = s.end();
@@ -93,49 +117,47 @@ namespace ivy {
         if (negative)
             value = -value;
 
-        return {value, std::basic_string_view<Char, Traits>(begin, end)};
+        return {value, basic_string<encoding, allocator>(begin, end)};
     }
 
-    template <typename Char, typename Traits, typename RTraits>
-    auto match_regex(std::basic_string_view<Char, Traits> s,
-                     std::basic_regex<Char, RTraits> const &regex)
-        -> std::pair<
-            std::optional<std::match_results<
-                typename std::basic_string_view<Char, Traits>::const_iterator>>,
-            std::string_view>
+    template <typename encoding, typename allocator>
+    auto match_regex(basic_string<encoding, allocator> const &s,
+                     u32regex const &regex)
+        -> std::pair<std::optional<u32smatch>,
+                     basic_string<encoding, allocator>>
     {
-        using string_view_type = std::basic_string_view<Char, Traits>;
-        using iterator_type = typename string_view_type::const_iterator;
-        using match_results_type = std::match_results<iterator_type>;
+        using string_type = basic_string<encoding, allocator>;
 
-        match_results_type matches;
-        auto r = std::regex_search(s.begin(), s.end(), matches, regex);
+        srell::match_results<typename string_type::iterator> matches;
+        auto r = regex_search(s.begin(),
+                              s.end(),
+                              matches,
+                              regex,
+                              srell::regex_constants::match_continuous);
 
-        if (!r || (matches[0].first != s.begin()))
-            return {{}, s};
+        if (r)
+            return {std::move(matches),
+                    string_type(matches[0].second, s.cend())};
 
-        return {std::move(matches),
-                string_view_type(matches[0].second, s.end())};
+        return {{}, s};
     }
 
-    template <typename Char, typename Traits>
-    auto match_whitespace(std::basic_string_view<Char, Traits> s)
-        -> std::pair<std::optional<std::basic_string_view<Char, Traits>>,
-                     std::basic_string_view<Char, Traits>>
+    template <typename encoding, typename allocator>
+    auto match_whitespace(basic_string<encoding, allocator> const &s)
+        -> std::pair<std::optional<basic_string<encoding, allocator>>,
+                     basic_string<encoding, allocator>>
     {
         auto begin = s.begin();
         auto end = s.end();
 
-        auto i = std::find_if(begin, end, [](Char c) {
-            return !std::isspace(static_cast<char32_t>(
-                static_cast<std::make_unsigned_t<Char>>(c)));
-        });
+        auto i =
+            std::find_if(begin, end, [](auto c) { return !ivy::isspace(c); });
 
         if (i == begin)
             return {{}, s};
 
-        return {std::basic_string_view<Char, Traits>(begin, i),
-                std::basic_string_view<Char, Traits>(i, end)};
+        return {basic_string<encoding, allocator>(begin, i),
+                basic_string<encoding, allocator>(i, end)};
     }
 
 #if 0

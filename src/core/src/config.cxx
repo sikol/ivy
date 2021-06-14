@@ -9,8 +9,12 @@
 #include <ivy/config/lex.hxx>
 #include <ivy/config/parse.hxx>
 #include <ivy/overload.hxx>
-#include <ivy/string/match.hxx>
+#include <ivy/regex.hxx>
 #include <ivy/string/convert.hxx>
+#include <ivy/string/format.hxx>
+#include <ivy/string/iostream.hxx>
+#include <ivy/string/match.hxx>
+#include <ivy/string/to_string.hxx>
 #include <ivy/string/trim.hxx>
 #include <ivy/trace.hxx>
 
@@ -20,15 +24,20 @@ namespace ivy::config {
      * token
      */
 
-    token::token(token_type type) : _type(type) {}
+    token::token(token_type type)
+        : _type(type)
+    {
+    }
 
-    token::token(token_type type, std::string_view value)
-        : _type(type), _value(value)
+    token::token(token_type type, string value)
+        : _type(type)
+        , _value(value)
     {
     }
 
     token::token(token_type type, std::int64_t value)
-        : _type(type), _value(value)
+        : _type(type)
+        , _value(value)
     {
     }
 
@@ -54,9 +63,9 @@ namespace ivy::config {
         return _value;
     }
 
-    auto as_string(token const &t) -> std::string_view const &
+    auto as_string(token const &t) -> string const &
     {
-        return *any_cast<std::string_view>(&t.value());
+        return *any_cast<string>(&t.value());
     }
 
     auto as_int(token const &t) -> std::int64_t
@@ -73,8 +82,7 @@ namespace ivy::config {
      * match_next
      */
 
-    auto match_next(std::string_view s)
-        -> std::pair<std::optional<token>, std::string_view>
+    auto match_next(string s) -> std::pair<std::optional<token>, string>
     {
         s = triml(s);
 
@@ -85,10 +93,14 @@ namespace ivy::config {
             return {token(T_INT, *i), rest};
         }
 
-        static std::regex identifier_regex("^[a-zA-Z][a-zA-Z0-9_-]*");
+        //static regex identifier_regex(U"^[a-zA-Z][a-zA-Z0-9_-]*");
+        static srell::u32regex identifier_regex(U"^[a-zA-Z][a-zA-Z0-9_-]*");
+
         if (auto [m, rest] = match_regex(s, identifier_regex); m) {
-            return {token(T_IDENTIFIER,
-                          std::string_view((*m)[0].first, (*m)[0].second)),
+//            std::vector<char32_t> u32chars;
+//            std::ranges::copy(
+//                (*m)[0].first, (*m)[0].second, std::back_inserter(u32chars));
+            return {token(T_IDENTIFIER, string((*m)[0].first, (*m)[0].second)),
                     rest};
         }
 
@@ -116,11 +128,20 @@ namespace ivy::config {
 
     datum::datum() = default;
 
-    datum::datum(bool b) : _value(b) {}
+    datum::datum(bool b)
+        : _value(b)
+    {
+    }
 
-    datum::datum(std::string_view v) : _value(v) {}
+    datum::datum(string v)
+        : _value(v)
+    {
+    }
 
-    datum::datum(std::int64_t v) : _value(v) {}
+    datum::datum(std::int64_t v)
+        : _value(v)
+    {
+    }
 
     auto datum::storage() const noexcept -> storage_type const &
     {
@@ -134,7 +155,7 @@ namespace ivy::config {
 
     auto as_string(datum const &value) -> std::optional<datum::string_type>
     {
-        if (auto const *s = get_if<std::string_view>(&value.storage()); s)
+        if (auto const *s = get_if<datum::string_type>(&value.storage()); s)
             return *s;
         return std::nullopt;
     }
@@ -153,35 +174,28 @@ namespace ivy::config {
         return std::nullopt;
     }
 
-    auto str(datum const &value) -> std::string
+    auto str(datum const &value) -> string
     {
         auto const &ss = value.storage();
 
         return std::visit(
-            overload{[](std::monostate) -> std::string { return "<empty>"; },
-                     [](bool b) -> std::string { return b ? "true" : "false"; },
-                     [](std::string_view sv) -> std::string {
-                         return std::string(sv.begin(), sv.end());
-                     },
-                     [](std::int64_t i) -> std::string {
-                         return std::to_string(i);
-                     }},
+            overload{
+                [](std::monostate) -> string { return U"<empty>"; },
+                [](bool b) -> string { return b ? U"true" : U"false"; },
+                [](datum::string_type const &sv) -> string {
+                    return string(sv.begin(), sv.end());
+                },
+                [](std::int64_t i) -> string { return to_string<string>(i); }},
             ss);
     }
 
-    auto operator==(datum const &d, std::string const &s) -> bool
+    auto operator==(datum const &d, string const &s) -> bool
     {
         auto v = as_string(d);
         return v && (*v == s);
     }
 
-    auto operator==(datum const &d, std::string_view sv) -> bool
-    {
-        auto v = as_string(d);
-        return v && (*v == sv);
-    }
-
-    auto operator==(datum const &d, char const *s) -> bool
+    auto operator==(datum const &d, string::value_type const *s) -> bool
     {
         auto v = as_string(d);
         return v && (*v == s);
@@ -209,8 +223,15 @@ namespace ivy::config {
      * item
      */
 
-    item::item(datum name) : _name(name) {}
-    item::item(datum name, datum value) : _name(name), _value(value) {}
+    item::item(datum name)
+        : _name(name)
+    {
+    }
+    item::item(datum name, datum value)
+        : _name(name)
+        , _value(value)
+    {
+    }
 
     item::item(item const &) = default;
     item::item(item &&) noexcept = default;
@@ -260,7 +281,8 @@ namespace ivy::config {
      */
 
     config_error::config_error(std::string const &error_text)
-        : std::runtime_error(error_text), _error_text(error_text)
+        : std::runtime_error(error_text)
+        , _error_text(error_text)
     {
     }
 
@@ -275,15 +297,15 @@ namespace ivy::config {
 
     namespace {
 
-        auto parse_qstring(std::string_view s)
-            -> std::pair<std::optional<std::string_view>, std::string_view>
+        auto parse_qstring(string const &s)
+            -> std::pair<std::optional<string>, string>
         {
             static constexpr char quote = '"';
 
-            s = triml(s);
+            auto trimmed = triml(s);
 
-            auto begin = s.begin();
-            auto end = s.end();
+            auto begin = trimmed.begin();
+            auto end = trimmed.end();
 
             if (begin == end || *begin != quote)
                 return {{}, s};
@@ -294,8 +316,8 @@ namespace ivy::config {
             while (begin < end) {
                 switch (*begin) {
                 case quote:
-                    return {std::string_view(string_start, begin),
-                            std::string_view(std::next(begin), end)};
+                    return {string(string_start, begin),
+                            string(std::next(begin), end)};
 
                 default:
                     ++begin;
@@ -306,8 +328,8 @@ namespace ivy::config {
             return {{}, s};
         }
 
-        auto parse_value(std::string_view s)
-            -> std::pair<std::optional<datum>, std::string_view>
+        auto parse_value(string const &s)
+            -> std::pair<std::optional<datum>, string>
         {
             if (auto [qstring, rest] = parse_qstring(s); qstring)
                 return {datum(*qstring), rest};
@@ -329,8 +351,8 @@ namespace ivy::config {
             }
         }
 
-        auto expect(std::string_view s, token_type ttype)
-            -> std::pair<std::optional<token>, std::string_view>
+        auto expect(string const &s, token_type ttype)
+            -> std::pair<std::optional<token>, string>
         {
             auto [tok, rest] = match_next(s);
 
@@ -340,10 +362,10 @@ namespace ivy::config {
             return {{}, s};
         }
 
-        auto parse_item(std::string_view s)
-            -> std::pair<std::optional<item>, std::string_view>
+        auto parse_item(string const &s)
+            -> std::pair<std::optional<item>, string>
         {
-            std::string_view rest = s;
+            string rest = s;
             std::optional<datum> vname;
 
             // Match the item name.
@@ -433,13 +455,12 @@ namespace ivy::config {
 
     } // namespace
 
-    auto parse(std::string const &text) -> expected<config, config_error>
+    auto parse(string const &text) -> expected<config, config_error>
     {
         config ret;
-        ret.text = std::make_shared<std::string>(text);
 
         std::optional<item> itm;
-        std::string_view rest = *ret.text;
+        string rest = text;
 
         try {
             for (;;) {

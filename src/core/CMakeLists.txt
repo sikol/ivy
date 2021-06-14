@@ -114,7 +114,9 @@ target_sources(ivy PRIVATE
     include/ivy/string/split.hxx
     include/ivy/string/transcode.hxx
     include/ivy/string/trim.hxx
-  )
+    include/ivy/regex.hxx
+    include/ivy/string/to_string.hxx
+    )
 
 if(WIN32)
     target_sources(ivy PRIVATE 
@@ -132,7 +134,7 @@ if(WIN32)
     target_link_libraries(ivy PUBLIC WIL::WIL)
 endif()
 
-target_link_libraries(ivy PUBLIC PkgConfig::icu-uc)
+target_link_libraries(ivy PUBLIC PkgConfig::icu-uc srell)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(ivy PUBLIC IVY_ENABLE_TRACING)

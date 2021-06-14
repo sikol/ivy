@@ -13,7 +13,8 @@
 #include <any>
 #include <cstdint>
 #include <optional>
-#include <string_view>
+
+#include <ivy/string.hxx>
 
 namespace ivy::config {
 
@@ -40,7 +41,7 @@ namespace ivy::config {
 
     public:
         explicit token(token_type type);
-        explicit token(token_type type, std::string_view value);
+        explicit token(token_type type, string value);
         explicit token(token_type type, std::int64_t value);
         // explicit token(token_type type, std::uint64_t value);
         token(token const &other);
@@ -52,12 +53,11 @@ namespace ivy::config {
         auto value() const -> std::any const &;
     };
 
-    auto as_string(token const &) -> std::string_view const &;
+    auto as_string(token const &) -> string const &;
     auto as_int(token const &) -> std::int64_t;
     // auto as_uint(token const *) -> std::uint64_t;
 
-    auto match_next(std::string_view s)
-        -> std::pair<std::optional<token>, std::string_view>;
+    auto match_next(string s) -> std::pair<std::optional<token>, string>;
 
 } // namespace ivy::config
 

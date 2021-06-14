@@ -10,37 +10,38 @@
 #include <iterator>
 #include <ranges>
 
+#include <ivy/string.hxx>
+
 namespace ivy {
 
     namespace detail {
 
-        template <typename Char, typename Traits, typename Predicate>
-        auto split_next(std::basic_string_view<Char, Traits> s, Predicate p)
-            -> std::pair<std::optional<std::basic_string_view<Char, Traits>>,
-                         std::basic_string_view<Char, Traits>>
+        template <typename encoding, typename allocator, typename predicate>
+        auto split_next(basic_string<encoding, allocator> const &s, predicate p)
+            -> std::pair<std::optional<basic_string<encoding, allocator>>,
+                         basic_string<encoding, allocator>>
         {
             auto d = std::ranges::find_if(s, p);
 
             if (d == s.end())
                 return {{}, s};
 
-            return {
-                std::basic_string_view<Char, Traits>(s.begin(), d),
-                std::basic_string_view<Char, Traits>(std::next(d), s.end())};
+            return {basic_string<encoding, allocator>(s.begin(), d),
+                    basic_string<encoding, allocator>(std::next(d), s.end())};
         }
 
     } // namespace detail
 
-    template <typename Char,
-              typename Traits,
-              typename Predicate,
-              typename Iterator>
-    auto split_if(std::basic_string_view<Char, Traits> s,
-                  Predicate p,
-                  Iterator it) -> void
+    template <typename encoding,
+              typename allocator,
+              typename predicate,
+              typename iterator>
+    auto split_if(basic_string<encoding, allocator> const &s,
+                  predicate p,
+                  iterator it) -> void
     {
-        std::optional<std::basic_string_view<Char, Traits>> part;
-        std::basic_string_view<Char, Traits> rest = s;
+        std::optional<basic_string<encoding, allocator>> part;
+        basic_string<encoding, allocator> rest = s;
 
         for (;;) {
             if (std::tie(part, rest) = detail::split_next(rest, p); !part)
@@ -52,35 +53,12 @@ namespace ivy {
         *it++ = rest;
     }
 
-    template <typename Char,
-              typename Traits,
-              typename Alloc,
-              typename Predicate,
-              typename Iterator>
-    auto split_if(std::basic_string<Char, Traits, Alloc> const &s,
-                  Predicate p,
-                  Iterator it) -> void
-    {
-        split_if(
-            std::basic_string_view<Char, Traits>(s.begin(), s.end()), p, it);
-    }
-
-    template <typename Char, typename Traits, typename Iterator>
-    auto split(std::basic_string_view<Char, Traits> s, Char delim, Iterator it)
+    template <typename encoding, typename allocator, typename iterator>
+    auto split(basic_string<encoding, allocator> const &s, typename encoding::char_type delim, iterator it)
         -> void
     {
-        auto p = [=](Char c) { return Traits::eq(delim, c); };
+        auto p = [=](typename encoding::char_type c) { return delim == c; };
         split_if(s, p, it);
-    }
-
-    template <typename Char, typename Traits, typename Alloc, typename Iterator>
-    auto split(std::basic_string<Char, Traits, Alloc> const &s,
-               Char delim,
-               Iterator it) -> void
-    {
-        split(std::basic_string_view<Char, Traits>(s.begin(), s.end()),
-              delim,
-              it);
     }
 
 } // namespace ivy

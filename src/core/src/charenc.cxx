@@ -3,11 +3,11 @@
  * Distributed under the Boost Software License, Version 1.0.
  */
 
+#include <cstddef>
+#include <format>
 #include <iterator>
 #include <ranges>
-#include <format>
 #include <span>
-#include <cstddef>
 
 #include <ivy/charenc/error.hxx>
 #include <ivy/charenc/icu/error.hxx>
@@ -15,6 +15,7 @@
 #include <ivy/noncopyable.hxx>
 #include <ivy/trace.hxx>
 
+#include <unicode/uchar.h>
 #include <unicode/ucnv.h>
 
 namespace ivy::icu {
@@ -219,3 +220,92 @@ namespace ivy::icu {
     }
 
 } // namespace ivy::icu
+
+namespace ivy {
+
+    auto isdigit(char32_t c) -> bool
+    {
+        return u_isdigit(c);
+    }
+
+    auto isupper(char32_t c) -> bool
+    {
+        return u_isupper(c);
+    }
+
+    auto islower(char32_t c) -> bool
+    {
+        return u_islower(c);
+    }
+
+    auto istitle(char32_t c) -> bool
+    {
+        return u_istitle(c);
+    }
+
+    auto isalpha(char32_t c) -> bool
+    {
+        return u_isalpha(c);
+    }
+
+    auto isalnum(char32_t c) -> bool
+    {
+        return u_isalnum(c);
+    }
+
+    auto isxdigit(char32_t c) -> bool
+    {
+        return u_isxdigit(c);
+    }
+
+    auto ispunct(char32_t c) -> bool
+    {
+        return u_ispunct(c);
+    }
+
+    auto isgraph(char32_t c) -> bool
+    {
+        return u_isgraph(c);
+    }
+
+    auto isblank(char32_t c) -> bool
+    {
+        return u_isblank(c);
+    }
+
+    auto isdefined(char32_t c) -> bool
+    {
+        return u_isdefined(c);
+    }
+
+    auto isspace(char32_t c) -> bool
+    {
+        return u_isspace(c);
+    }
+
+    auto iscntrl(char32_t c) -> bool
+    {
+        return u_iscntrl(c);
+    }
+
+    auto isprint(char32_t c) -> bool
+    {
+        return u_isprint(c);
+    }
+
+    auto isbase(char32_t c) -> bool
+    {
+        return u_isbase(c);
+    }
+
+    auto toupper(char32_t c) -> char32_t
+    {
+        return u_toupper(c);
+    }
+
+    auto tolower(char32_t c) -> char32_t
+    {
+        return u_tolower(c);
+    }
+
+} // namespace ivy

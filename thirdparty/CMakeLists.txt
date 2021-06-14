@@ -8,3 +8,7 @@
 if(NOT TARGET nanodbc)
     add_subdirectory(nanodbc)
 endif()
+
+if(NOT TARGET srell)
+    add_subdirectory(srell)
+endif()
