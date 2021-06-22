@@ -6,6 +6,7 @@
 #include <iostream>
 #include <regex>
 
+#include <ivy/config/bind.hxx>
 #include <ivy/config/lex.hxx>
 #include <ivy/config/parse.hxx>
 #include <ivy/overload.hxx>
@@ -93,13 +94,14 @@ namespace ivy::config {
             return {token(T_INT, *i), rest};
         }
 
-        //static regex identifier_regex(U"^[a-zA-Z][a-zA-Z0-9_-]*");
+        // static regex identifier_regex(U"^[a-zA-Z][a-zA-Z0-9_-]*");
         static srell::u32regex identifier_regex(U"^[a-zA-Z][a-zA-Z0-9_-]*");
 
         if (auto [m, rest] = match_regex(s, identifier_regex); m) {
-//            std::vector<char32_t> u32chars;
-//            std::ranges::copy(
-//                (*m)[0].first, (*m)[0].second, std::back_inserter(u32chars));
+            //            std::vector<char32_t> u32chars;
+            //            std::ranges::copy(
+            //                (*m)[0].first, (*m)[0].second,
+            //                std::back_inserter(u32chars));
             return {token(T_IDENTIFIER, string((*m)[0].first, (*m)[0].second)),
                     rest};
         }
@@ -300,29 +302,37 @@ namespace ivy::config {
         auto parse_qstring(string const &s)
             -> std::pair<std::optional<string>, string>
         {
-            static constexpr char quote = '"';
-
             auto trimmed = triml(s);
 
             auto begin = trimmed.begin();
             auto end = trimmed.end();
 
-            if (begin == end || *begin != quote)
+            if (begin == end)
                 return {{}, s};
+
+            char32_t quote;
+            switch (*begin) {
+            case '"':
+                quote = '"';
+                break;
+
+            case '\'':
+                quote = '\'';
+                break;
+
+            default:
+                return {{}, s};
+            }
 
             ++begin;
             auto string_start = begin;
 
             while (begin < end) {
-                switch (*begin) {
-                case quote:
+                if (*begin == quote)
                     return {string(string_start, begin),
                             string(std::next(begin), end)};
 
-                default:
-                    ++begin;
-                    break;
-                }
+                ++begin;
             }
 
             return {{}, s};
@@ -455,9 +465,9 @@ namespace ivy::config {
 
     } // namespace
 
-    auto parse(string const &text) -> expected<config, config_error>
+    auto parse(string const &text) -> expected<item, config_error>
     {
-        config ret;
+        item ret(datum(U"<top-level>"));
 
         std::optional<item> itm;
         string rest = text;
@@ -473,7 +483,7 @@ namespace ivy::config {
 
                 IVY_TRACE("config: got item, name=[{}]", str(itm->name()));
 
-                ret.items.push_back(std::move(*itm));
+                ret.add_subitem(std::move(*itm));
             }
         } catch (config_error const &e) {
             return make_unexpected(e);

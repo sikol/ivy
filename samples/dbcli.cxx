@@ -14,16 +14,20 @@
 #include <ivy/format.hxx>
 #include <ivy/string/transcode.hxx>
 
-using db_connection_error =
-    ivy::message<"DBCLI", 'E', "CONNECT", "Failed to connect to the database">;
+using dbcli_facility = ivy::facility<"DBCLI">;
 
-using invalid_connection_string =
-    ivy::message<"DBCLI", 'E', "INVCONNSTR", "Invalid connection string">;
+using db_connection_error = ivy::message<dbcli_facility,
+                                         'E',
+                                         "CONNECT",
+                                         "Failed to connect to the database">;
 
-using query_execution_error =
-    ivy::message<"DBCLI", 'E', "QUERYERROR", "Failed to execute the query">;
+using invalid_connection_string = ivy::
+    message<dbcli_facility, 'E', "INVCONNSTR", "Invalid connection string">;
 
-using db_connected = ivy::message<"DBCLI",
+using query_execution_error = ivy::
+    message<dbcli_facility, 'E', "QUERYERROR", "Failed to execute the query">;
+
+using db_connected = ivy::message<dbcli_facility,
                                   'I',
                                   "CONNECTED",
                                   "Connected to database; type \\q to quit">;

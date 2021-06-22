@@ -13,6 +13,7 @@
 #include <iostream>
 #include <iterator>
 #include <ranges>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -143,12 +144,13 @@ namespace ivy {
     // UTF-32-encoded string.
     using u32string = basic_string<utf32_encoding>;
 
-    // Ivy's native string type; currently this is UTF-32, because many C++ APIs are
-    // designed on the assumption that one char value is one character.  For example,
-    // std::basic_regex cannot be used with UTF-8 or UTF-16 strings.
+    // Ivy's native string type; currently this is UTF-32, because many C++ APIs
+    // are designed on the assumption that one char value is one character.  For
+    // example, std::basic_regex cannot be used with UTF-8 or UTF-16 strings.
     //
-    // In the future we might want to consider a different approach, such as using
-    // UTF-8 for storage and providing an interface to iterate over characters.
+    // In the future we might want to consider a different approach, such as
+    // using UTF-8 for storage and providing an interface to iterate over
+    // characters.
     using string = u32string;
 
     template <character_encoding Encoding, typename Alloc>
@@ -339,7 +341,8 @@ namespace ivy {
     }
 
     template <character_encoding Encoding, typename Alloc>
-    auto basic_string<Encoding, Alloc>::cbegin() const noexcept -> const_iterator
+    auto basic_string<Encoding, Alloc>::cbegin() const noexcept
+        -> const_iterator
     {
         return begin();
     }
@@ -384,7 +387,8 @@ namespace ivy {
         auto b_span = std::span<typename Encoding::char_type const>(
             b.data(), b.data() + b.size());
 
-        return a_span <=> b_span;
+        return std::lexicographical_compare_three_way(
+            a_span.begin(), a_span.end(), b_span.begin(), b_span.end());
     }
 
     template <character_encoding Encoding, typename Alloc>

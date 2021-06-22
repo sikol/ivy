@@ -16,14 +16,16 @@
 
 namespace ivy {
 
+    using cli_facility = facility<"CLI">;
+
     using cli_argencoding =
-        message<"CLI", 'E', "ARGPARSE", "Invalid encoding in argument">;
+        message<cli_facility, 'E', "ARGPARSE", "Invalid encoding in argument">;
 
     using cli_nooption =
-        message<"CLI", 'E', "NOOPTION", "Unrecognised option '{}'">;
+        message<cli_facility, 'E', "NOOPTION", "Unrecognised option '{}'">;
 
     using cli_noargument =
-        message<"CLI", 'E', "NOARG", "Missing argument '{}'">;
+        message<cli_facility, 'E', "NOARG", "Missing argument '{}'">;
 
     namespace detail {
 

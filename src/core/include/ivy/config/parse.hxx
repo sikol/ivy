@@ -3,15 +3,19 @@
  * Distributed under the Boost Software License, Version 1.0.
  */
 
+#ifndef IVY_CONFIG_PARSE_HXX_INCLUDED
+#define IVY_CONFIG_PARSE_HXX_INCLUDED
+
 #include <cstdint>
-#include <optional>
-#include <variant>
 #include <iosfwd>
 #include <memory>
+#include <optional>
 #include <stdexcept>
+#include <variant>
 
 #include <ivy/expected.hxx>
 #include <ivy/string.hxx>
+#include <ivy/string/format.hxx>
 
 namespace ivy::config {
 
@@ -21,7 +25,8 @@ namespace ivy::config {
 
     class datum {
     public:
-        using storage_type = std::variant<std::monostate, bool, string, std::int64_t>;
+        using storage_type =
+            std::variant<std::monostate, bool, string, std::int64_t>;
 
     private:
         storage_type _value;
@@ -84,10 +89,6 @@ namespace ivy::config {
         auto end() const noexcept -> const_iterator;
     };
 
-    struct config {
-        std::vector<item> items;
-    };
-
     class config_error : public std::runtime_error {
         std::string _error_text;
 
@@ -97,6 +98,30 @@ namespace ivy::config {
         auto error() const noexcept -> std::string const &;
     };
 
-    auto parse(string const &text) -> expected<config, config_error>;
+    auto parse(string const &text) -> expected<item, config_error>;
 
 } // namespace ivy::config
+
+namespace std {
+
+    template <typename char_type>
+    struct formatter<ivy::config::datum, char_type> {
+        formatter<ivy::string> string_formatter;
+
+        template <typename ParseContext>
+        constexpr auto parse(ParseContext &ctx)
+        {
+            return string_formatter.parse(ctx);
+        }
+
+        template <typename FormatContext>
+        auto format(ivy::config::datum const &d, FormatContext &ctx)
+        {
+            auto tx = ivy::transcode<ivy::string>(str(d)).or_throw();
+            return string_formatter.format(tx, ctx);
+        }
+    };
+
+} // namespace std
+
+#endif // IVY_CONFIG_PARSE_HXX_INCLUDED

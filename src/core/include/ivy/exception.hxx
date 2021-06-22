@@ -16,11 +16,20 @@
 
 namespace ivy {
 
-    template <string_literal facility_text,
+    template<string_literal name_text>
+    class facility : public std::exception {
+    public:
+        auto facility_name() const -> std::string
+        {
+            return std::string(name_text.value);
+        }
+    };
+
+    template <typename facility_type,
               char severity_text,
               string_literal code_text,
               string_literal format>
-    class message : public std::exception {
+    class message : public facility_type {
         std::string _formatted;
 
     public:
@@ -30,7 +39,7 @@ namespace ivy {
         explicit message()
         try {
             _formatted = std::format("{}-{}-{}, {}",
-                                     facility_text.value,
+                                     this->facility_name(),
                                      severity_text,
                                      code_text.value,
                                      format.value);
@@ -44,7 +53,7 @@ namespace ivy {
         try {
             _formatted = std::format(
                 "{}-{}-{}, {}",
-                facility_text.value,
+                this->facility_name(),
                 severity_text,
                 code_text.value,
                 std::format(format.value, t1, std::forward<Rest>(rest)...));
@@ -57,9 +66,9 @@ namespace ivy {
         }
     };
 
-    auto print_exception(std::ostream &strm,
-                         std::exception const &e,
-                         char prefix = '%') -> void
+    inline auto print_exception(std::ostream &strm,
+                                std::exception const &e,
+                                char prefix = '%') -> void
     {
         strm << prefix;
 
@@ -76,9 +85,9 @@ namespace ivy {
         }
     }
 
-    auto print_exception(std::ostream &strm,
-                         std::exception_ptr const &eptr,
-                         char prefix = '%') -> void
+    inline auto print_exception(std::ostream &strm,
+                                std::exception_ptr const &eptr,
+                                char prefix = '%') -> void
     {
         try {
             std::rethrow_exception(eptr);
@@ -89,19 +98,20 @@ namespace ivy {
         }
     }
 
-    auto print_current_exception(std::ostream &strm, char prefix = '%') -> void
+    inline auto print_current_exception(std::ostream &strm, char prefix = '%')
+        -> void
     {
         print_exception(strm, std::current_exception(), prefix);
     }
 
     template <typename char_type,
               typename traits,
-              string_literal F,
+              typename facility_type,
               char S,
               string_literal C,
               string_literal M>
     auto operator<<(std::basic_ostream<char_type, traits> &strm,
-                    message<F, S, C, M> const &m)
+                    message<facility_type, S, C, M> const &m)
         -> std::basic_ostream<char_type, traits> &
     {
         strm << '%' << m.what() << ".\n";

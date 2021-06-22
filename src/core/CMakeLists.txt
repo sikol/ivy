@@ -116,7 +116,7 @@ target_sources(ivy PRIVATE
     include/ivy/string/trim.hxx
     include/ivy/regex.hxx
     include/ivy/string/to_string.hxx
-    )
+     "include/ivy/config/bind.hxx")
 
 if(WIN32)
     target_sources(ivy PRIVATE 
