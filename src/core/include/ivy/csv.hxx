@@ -94,7 +94,7 @@ namespace ivy {
             auto r = _channel->read(std::span(&c, 1));
             if (!r)
                 return make_unexpected(make_error<csv_error>(
-                    std::format("file read failed: {}", r.error().message())));
+                    std::format("file read failed: {}", r.error().what())));
 
             if (c == '\n') {
                 row.fields.push_back(string_type(word));

@@ -11,6 +11,7 @@
 #include <system_error>
 
 #include <ivy/expected.hxx>
+#include <ivy/error.hxx>
 #include <ivy/io/channel.hxx>
 
 namespace ivy {
@@ -37,7 +38,7 @@ namespace ivy {
         using typename pmrchannel_base<T>::value_type;
 
         virtual auto read(std::span<value_type>) noexcept
-            -> expected<io_size_t, std::error_code> = 0;
+            -> expected<io_size_t, error> = 0;
     };
 
     template <sequential_input_channel base_channel, layer_ownership ownership>
@@ -60,7 +61,7 @@ namespace ivy {
         }
 
         auto read(std::span<value_type> buf) noexcept
-            -> expected<io_size_t, std::error_code> override
+            -> expected<io_size_t, error> override
         {
             return this->get_base_layer().read(buf);
         }
@@ -88,7 +89,7 @@ namespace ivy {
         using typename pmrchannel_base<T>::value_type;
 
         virtual auto write(std::span<value_type const>) noexcept
-            -> expected<io_size_t, std::error_code> = 0;
+            -> expected<io_size_t, error> = 0;
     };
 
     template <sequential_output_channel base_channel, layer_ownership ownership>
@@ -111,7 +112,7 @@ namespace ivy {
         }
 
         auto write(std::span<value_type const> buf) noexcept
-            -> expected<io_size_t, std::error_code> override
+            -> expected<io_size_t, error> override
         {
             return this->get_base_layer().write(buf);
         }
@@ -159,13 +160,13 @@ namespace ivy {
         }
 
         auto write(std::span<value_type const> buf) noexcept
-            -> expected<io_size_t, std::error_code> override
+            -> expected<io_size_t, error> override
         {
             return this->get_base_layer().write(buf);
         }
 
         auto read(std::span<value_type> buf) noexcept
-            -> expected<io_size_t, std::error_code> override
+            -> expected<io_size_t, error> override
         {
             return this->get_base_layer().read(buf);
         }

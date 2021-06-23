@@ -13,6 +13,7 @@
 
 #include <ivy/buffer/buffer.hxx>
 #include <ivy/expected.hxx>
+#include <ivy/error.hxx>
 
 namespace ivy {
 
@@ -32,14 +33,14 @@ namespace ivy {
     concept sequential_input_channel = 
         channel<T> 
         && requires(T &o, std::span<channel_value_t<T>> &b)  {
-            { o.read(b) } -> std::same_as<expected<std::size_t, std::error_code>>;
+            { o.read(b) } -> std::same_as<expected<std::size_t, error>>;
         };
 
     template<typename T>
     concept sequential_output_channel = 
         channel<T> 
         && requires(T &o, std::span<channel_value_t<T const>> &b)  {
-            { o.write(b) } -> std::same_as<expected<std::size_t, std::error_code>>;
+            { o.write(b) } -> std::same_as<expected<std::size_t, error>>;
         };
 
     template<typename T>
@@ -136,7 +137,7 @@ namespace ivy {
     auto read_some(channel_type &channel,
                    range_type &&range,
                    io_size_t n = unlimited)
-        -> expected<io_size_t, std::error_code>
+        -> expected<io_size_t, error>
     requires std::same_as<channel_value_t<channel_type>,
                           std::ranges::range_value_t<range_type>>
     // clang-format on
@@ -155,7 +156,7 @@ namespace ivy {
     auto read_some(channel_type &channel,
                    buffer_type &buffer,
                    io_size_t n = unlimited)
-        -> expected<io_size_t, std::error_code>
+        -> expected<io_size_t, error>
     requires std::same_as<channel_value_t<channel_type>,
                           buffer_value_t<buffer_type>>
     // clang-format on
@@ -184,7 +185,7 @@ namespace ivy {
     auto read_all(channel_type &channel,
                   range_type &&range,
                   io_size_t n = unlimited)
-        -> std::pair<io_size_t, std::error_code>
+        -> std::pair<io_size_t, error>
     requires std::same_as<channel_value_t<channel_type>,
                           std::ranges::range_value_t<range_type>>
     // clang-format on
@@ -215,7 +216,7 @@ namespace ivy {
     auto read_all(channel_type &channel,
                   buffer_type &buffer,
                   io_size_t n = unlimited)
-        -> std::pair<io_size_t, std::error_code>
+        -> std::pair<io_size_t, error>
     requires std::same_as<channel_value_t<channel_type>,
                           buffer_value_t<buffer_type>>
     // clang-format on
@@ -246,7 +247,7 @@ namespace ivy {
     auto write_some(channel_type &channel,
                     range_type &&range,
                     io_size_t n = unlimited)
-         -> expected<io_size_t, std::error_code>
+         -> expected<io_size_t, error>
     requires std::same_as<channel_value_t<channel_type>,
                           std::ranges::range_value_t<range_type>>
     // clang-format on
@@ -266,7 +267,7 @@ namespace ivy {
     auto write_some(channel_type &channel,
                     buffer_type &buffer,
                     io_size_t n = unlimited)
-        -> expected<io_size_t, std::error_code>
+        -> expected<io_size_t, error>
     requires std::same_as<channel_value_t<channel_type>,
                           buffer_value_t<buffer_type>>
     // clang-format on
@@ -300,7 +301,7 @@ namespace ivy {
     auto write_all(channel_type &channel,
                    range_type &&range,
                    io_size_t n = unlimited)
-         -> std::pair<io_size_t, std::error_code>
+         -> std::pair<io_size_t, error>
     requires std::same_as<const channel_value_t<channel_type>,
                           std::add_const_t<std::ranges::range_value_t<range_type>>>
     // clang-format on
@@ -331,7 +332,7 @@ namespace ivy {
     auto write_all(channel_type &channel,
                    buffer_type &buffer,
                    io_size_t n = unlimited)
-        -> std::pair<io_size_t, std::error_code>
+        -> std::pair<io_size_t, error>
     requires std::same_as<channel_value_t<channel_type>,
                           buffer_value_t<buffer_type>>
     // clang-format on

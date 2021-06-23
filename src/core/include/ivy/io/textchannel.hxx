@@ -19,7 +19,7 @@ namespace ivy {
     template <sequential_channel base_channel, layer_ownership ownership>
     class textchannel final : layer_base<base_channel, ownership> {
     private:
-        std::error_code _error;
+        error _error;
 
     public:
         using value_type = typename base_channel::value_type;
@@ -43,15 +43,14 @@ namespace ivy {
         {
         }
 
-        auto read(std::span<value_type>) noexcept
-            -> expected<io_size_t, std::error_code>;
+        auto read(std::span<value_type>) noexcept -> expected<io_size_t, error>;
 
         auto write(std::span<value_type const>) noexcept
-            -> expected<io_size_t, std::error_code>;
+            -> expected<io_size_t, error>;
 
-        auto get_error() const noexcept -> std::error_code;
-        auto set_error(std::error_code) noexcept -> std::error_code;
-        auto clear_error() noexcept -> std::error_code;
+        auto get_error() const noexcept -> error;
+        auto set_error(error) noexcept -> error;
+        auto clear_error() noexcept -> error;
 
         explicit operator bool() const noexcept;
     };
@@ -71,29 +70,27 @@ namespace ivy {
 
     template <sequential_channel base_channel, layer_ownership ownership>
     auto textchannel<base_channel, ownership>::get_error() const noexcept
-        -> std::error_code
+        -> error
     {
         return _error;
     }
 
     template <sequential_channel base_channel, layer_ownership ownership>
-    auto textchannel<base_channel, ownership>::set_error(
-        std::error_code error) noexcept -> std::error_code
+    auto textchannel<base_channel, ownership>::set_error(error err) noexcept
+        -> error
     {
-        return std::exchange(_error, error);
+        return std::exchange(_error, err);
     }
 
     template <sequential_channel base_channel, layer_ownership ownership>
-    auto textchannel<base_channel, ownership>::clear_error() noexcept
-        -> std::error_code
+    auto textchannel<base_channel, ownership>::clear_error() noexcept -> error
     {
-        return std::exchange(_error, std::error_code());
+        return std::exchange(_error, error());
     }
 
     template <sequential_channel base_channel, layer_ownership ownership>
     auto textchannel<base_channel, ownership>::read(
-        std::span<value_type> buf) noexcept
-        -> expected<io_size_t, std::error_code>
+        std::span<value_type> buf) noexcept -> expected<io_size_t, error>
     {
         if (_error)
             return make_unexpected(_error);
@@ -103,8 +100,7 @@ namespace ivy {
 
     template <sequential_channel base_channel, layer_ownership ownership>
     auto textchannel<base_channel, ownership>::write(
-        std::span<value_type const> buf) noexcept
-        -> expected<io_size_t, std::error_code>
+        std::span<value_type const> buf) noexcept -> expected<io_size_t, error>
     {
         if (_error)
             return make_unexpected(_error);

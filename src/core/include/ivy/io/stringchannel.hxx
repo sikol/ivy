@@ -34,11 +34,9 @@ namespace ivy {
 
         auto str() const -> string_type;
 
-        auto read(std::span<value_type>)
-            -> expected<io_size_t, std::error_code>;
+        auto read(std::span<value_type>) -> expected<io_size_t, error>;
 
-        auto write(std::span<value_type const>)
-            -> expected<io_size_t, std::error_code>;
+        auto write(std::span<value_type const>) -> expected<io_size_t, error>;
     };
 
     using stringchannel = basic_stringchannel<system_encoding>;
@@ -66,12 +64,12 @@ namespace ivy {
     template <character_encoding encoding, typename allocator>
     auto
     basic_stringchannel<encoding, allocator>::read(std::span<value_type> data)
-        -> expected<io_size_t, std::error_code>
+        -> expected<io_size_t, error>
     {
         auto readable = std::span(_buffer.begin() + _readp, _buffer.end());
 
         if (readable.size() == 0)
-            return make_unexpected(make_error_code(errc::end_of_file));
+            return make_unexpected(make_error(errc::end_of_file));
 
         if (readable.size() > data.size())
             readable = readable.subspan(0, data.size());
@@ -84,8 +82,7 @@ namespace ivy {
 
     template <character_encoding encoding, typename allocator>
     auto basic_stringchannel<encoding, allocator>::write(
-        std::span<value_type const> data)
-        -> expected<io_size_t, std::error_code>
+        std::span<value_type const> data) -> expected<io_size_t, error>
     {
         try {
             auto ipos = _buffer.begin() + _writep;
@@ -103,7 +100,7 @@ namespace ivy {
             return data.size();
         } catch (std::bad_alloc const &) {
             return make_unexpected(
-                make_error_code(std::errc::not_enough_memory));
+                make_error(std::errc::not_enough_memory));
         }
 
         return data.size();

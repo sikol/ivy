@@ -142,7 +142,7 @@ namespace ivy::win32::httpsys {
                         // Do not call finish_response here() so we abort.
                         return make_unexpected(make_error<http::http_error>(
                             std::format("failed to read request body: {}",
-                                        nread.error().message())));
+                                        nread.error().what())));
                     }
 
                     break;

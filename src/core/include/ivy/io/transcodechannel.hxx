@@ -49,8 +49,7 @@ namespace ivy {
         {
         }
 
-        auto read(std::span<value_type>) noexcept
-            -> expected<io_size_t, std::error_code>;
+        auto read(std::span<value_type>) noexcept -> expected<io_size_t, error>;
     };
 
     template <typename source_encoding,
@@ -83,7 +82,7 @@ namespace ivy {
                            target_encoding,
                            base_channel,
                            ownership>::read(std::span<value_type> buf) noexcept
-        -> expected<io_size_t, std::error_code>
+        -> expected<io_size_t, error>
     {
         if (_buffer.empty()) {
             typename encoding_traits<source_encoding>::char_type
