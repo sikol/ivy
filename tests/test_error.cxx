@@ -30,7 +30,7 @@ auto return_success() -> ivy::error
 TEST_CASE("ivy:error: exception", "[ivy][error]")
 {
     auto err = return_runtime_error("this is a test error");
-    REQUIRE(!err);
+    REQUIRE(err);
     REQUIRE(err.what() == "this is a test error");
 
     REQUIRE(err.is<std::exception>());
@@ -47,7 +47,7 @@ TEST_CASE("ivy:error: exception", "[ivy][error]")
 TEST_CASE("ivy:error: std::error_code", "[ivy][error]")
 {
     auto err = return_invalid_argument();
-    REQUIRE(!err);
+    REQUIRE(err);
 
     REQUIRE(!is<std::exception>(err));
     REQUIRE(!is<std::runtime_error>(err));
@@ -59,7 +59,7 @@ TEST_CASE("ivy:error: std::error_code", "[ivy][error]")
 TEST_CASE("ivy:error returns success", "[ivy][error]")
 {
     auto err = return_success();
-    REQUIRE(err);
+    REQUIRE(!err);
     REQUIRE(err.what() == "success");
     REQUIRE(!err.is<std::exception>());
     REQUIRE(err.get<std::exception>() == nullptr);

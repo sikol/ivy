@@ -10,19 +10,21 @@
 #include <ivy/datum/string.hxx>
 #include <ivy/datum/null.hxx>
 #include <ivy/datum/boolean.hxx>
+#include <ivy/string/transcode.hxx>
 
 TEST_CASE("ivy:datum:str", "[ivy][datum]") {
     ivy::datum i = ivy::make_integer_datum(42);
-    REQUIRE(str(i) == "42");
+    INFO(ivy::transcode<std::string>(str(i)).or_throw());
+    REQUIRE(str(i) == U"42");
 
-    ivy::datum s = ivy::make_string_datum("foo");
-    REQUIRE(str(s) == "foo");
+    ivy::datum s = ivy::make_string_datum(U"foo");
+    REQUIRE(str(s) == U"foo");
 
     ivy::datum n = ivy::make_null_datum();
-    REQUIRE(str(n) == "null");
+    REQUIRE(str(n) == U"null");
 
     ivy::datum b = ivy::make_boolean_datum(true);
-    REQUIRE(str(b) == "true");
+    REQUIRE(str(b) == U"true");
 }
 
 TEST_CASE("ivy:datum:operator==", "[ivy][datum]") {
@@ -30,9 +32,9 @@ TEST_CASE("ivy:datum:operator==", "[ivy][datum]") {
     ivy::datum one_ = ivy::make_integer_datum(1);
     ivy::datum two = ivy::make_integer_datum(2);
 
-    ivy::datum foo = ivy::make_string_datum("foo");
-    ivy::datum foo_ = ivy::make_string_datum("foo");
-    ivy::datum bar = ivy::make_string_datum("bar");
+    ivy::datum foo = ivy::make_string_datum(U"foo");
+    ivy::datum foo_ = ivy::make_string_datum(U"foo");
+    ivy::datum bar = ivy::make_string_datum(U"bar");
 
     ivy::datum null = ivy::make_null_datum();
     ivy::datum null_ = ivy::make_null_datum();
@@ -62,9 +64,9 @@ TEST_CASE("ivy:datum:datum_cast", "[ivy][datum]")
     REQUIRE(is<ivy::integer_type>(i));
     REQUIRE(ivy::datum_cast<std::int64_t>(i) == 42);
 
-    ivy::datum s = ivy::make_string_datum("foo");
+    ivy::datum s = ivy::make_string_datum(U"foo");
     REQUIRE(is<ivy::string_type>(s));
-    REQUIRE(ivy::datum_cast<std::string>(s) == "foo");
+    REQUIRE(ivy::datum_cast<ivy::string>(s) == U"foo");
 
     ivy::datum b = ivy::make_boolean_datum(true);
     REQUIRE(is<ivy::boolean_type>(b));

@@ -16,7 +16,7 @@ namespace ivy {
 
         auto get() const noexcept -> datum_type const * final;
         auto name() const noexcept -> char const * final;
-        auto str(std::any const &v) const -> std::string final;
+        auto str(std::any const &v) const -> string final;
         auto equal(std::any const &a, std::any const &b) const -> bool final;
     };
 

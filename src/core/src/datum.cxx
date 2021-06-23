@@ -9,6 +9,7 @@
 #include <ivy/datum/string.hxx>
 #include <ivy/datum/null.hxx>
 #include <ivy/datum/boolean.hxx>
+#include <ivy/string/to_string.hxx>
 
 namespace ivy {
 
@@ -38,7 +39,7 @@ namespace ivy {
         return _type;
     }
 
-    auto datum::str() const -> std::string
+    auto datum::str() const -> string
     {
         return _type->str(_value);
     }
@@ -59,7 +60,7 @@ namespace ivy {
         return _value;
     }
 
-    auto str(datum const &d) -> std::string
+    auto str(datum const &d) -> string
     {
         return d.str();
     }
@@ -86,12 +87,12 @@ namespace ivy {
         return "integer";
     }
 
-    auto integer_type::str(std::any const &v) const -> std::string
+    auto integer_type::str(std::any const &v) const -> string
     {
         auto *i = std::any_cast<std::int64_t>(&v);
         IVY_CHECK(i != nullptr, "integer_type: bad value");
 
-        return std::to_string(*i);
+        return to_string<string>(*i);
     }
 
     auto integer_type::equal(std::any const &a, std::any const &b) const -> bool
@@ -147,9 +148,9 @@ namespace ivy {
         return "string";
     }
 
-    auto string_type::str(std::any const &v) const -> std::string
+    auto string_type::str(std::any const &v) const -> string
     {
-        auto *s = std::any_cast<std::string>(&v);
+        auto *s = std::any_cast<string>(&v);
         IVY_CHECK(s != nullptr, "string_type: bad value");
 
         return *s;
@@ -157,10 +158,10 @@ namespace ivy {
 
     auto string_type::equal(std::any const &a, std::any const &b) const -> bool
     {
-        auto *aptr = std::any_cast<std::string>(&a);
+        auto *aptr = std::any_cast<string>(&a);
         IVY_CHECK(aptr != nullptr, "string_type: bad value");
 
-        auto *bptr = std::any_cast<std::string>(&b);
+        auto *bptr = std::any_cast<string>(&b);
         IVY_CHECK(bptr != nullptr, "string_type: bad value");
 
         return *aptr == *bptr;
@@ -177,29 +178,29 @@ namespace ivy {
         return &type;
     }
 
-    auto make_string_datum(std::string const &s) -> datum
+    auto make_string_datum(string const &s) -> datum
     {
         return datum(get_string_type(), s);
     }
 
-    auto make_string_datum(char const *s) -> datum
+    auto make_string_datum(string::value_type const *s) -> datum
     {
-        return datum(get_string_type(), std::string(s));
+        return datum(get_string_type(), string(s));
     }
 
     template <>
-    auto datum_cast<std::string>(datum const &d) -> std::string
+    auto datum_cast<string>(datum const &d) -> string
     {
-        auto const *s = std::any_cast<std::string>(&d.storage());
+        auto const *s = std::any_cast<string>(&d.storage());
         if (!s)
             throw bad_datum_cast();
         return *s;
     }
 
     template <>
-    auto datum_cast<std::string>(datum const *d) -> std::string const *
+    auto datum_cast<string>(datum const *d) -> string const *
     {
-        auto const *s = std::any_cast<std::string>(&d->storage());
+        auto const *s = std::any_cast<string>(&d->storage());
         return s;
     }
 
@@ -213,12 +214,12 @@ namespace ivy {
         return "null";
     }
 
-    auto null_type::str(std::any const &v) const -> std::string
+    auto null_type::str(std::any const &v) const -> string
     {
         auto *s = std::any_cast<nullptr_t>(&v);
         IVY_CHECK(s != nullptr, "null_type: bad value");
 
-        return "null";
+        return U"null";
     }
 
     auto null_type::equal(std::any const &a, std::any const &b) const -> bool
@@ -258,12 +259,12 @@ namespace ivy {
         return "boolean";
     }
 
-    auto boolean_type::str(std::any const &v) const -> std::string
+    auto boolean_type::str(std::any const &v) const -> string
     {
         auto *b = std::any_cast<bool>(&v);
         IVY_CHECK(b != nullptr, "boolean_type: bad value");
 
-        return *b ? "true" : "false";
+        return *b ? U"true" : U"false";
     }
 
     auto boolean_type::equal(std::any const &a, std::any const &b) const -> bool

@@ -241,7 +241,8 @@ namespace ivy::db::odbc {
             return make_boolean_datum(_result->get<int>(_column_number));
 
         default:
-            return make_string_datum(_result->get<std::string>(_column_number));
+            auto str = _result->get<std::string>(_column_number);
+            return make_string_datum(transcode<string>(str).or_throw());
         }
     } catch (nanodbc::database_error const &e) {
         return make_unexpected(make_error<db_error>(e.what()));

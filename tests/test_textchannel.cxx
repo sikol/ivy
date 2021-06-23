@@ -7,12 +7,14 @@
 
 #include <ivy/io/textchannel.hxx>
 #include <ivy/io/stringchannel.hxx>
+#include <ivy/string/transcode.hxx>
 
 TEST_CASE("ivy:textchannel: output", "[ivy][io][textchannel]") {
     {
         ivy::u8stringchannel chan;
         auto strm = ivy::make_textchannel(chan);
         strm << 42;
+        INFO(ivy::transcode<std::string>(chan.str()).or_throw());
         REQUIRE(chan.str() == u8"42");
     }
 

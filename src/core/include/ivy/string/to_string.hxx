@@ -28,7 +28,7 @@ namespace ivy {
         if (negative)
             ret.push_back('-');
 
-        return string_type(ret.begin(), ret.end());
+        return string_type(ret.rbegin(), ret.rend());
     }
 
     template <typename string_type, std::unsigned_integral int_type>
@@ -43,7 +43,7 @@ namespace ivy {
             i /= 10;
         }
 
-        return string_type(ret.begin(), ret.end());
+        return string_type(ret.rbegin(), ret.rend());
     }
 
 } // namespace ivy

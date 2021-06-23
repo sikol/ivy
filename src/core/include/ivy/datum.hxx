@@ -7,8 +7,9 @@
 #define IVY_DATUM_HXX_INCLUDED
 
 #include <any>
-#include <string>
 #include <stdexcept>
+
+#include <ivy/string.hxx>
 
 namespace ivy {
 
@@ -16,7 +17,7 @@ namespace ivy {
     public:
         virtual auto get() const noexcept -> datum_type const * = 0;
         virtual auto name() const noexcept -> char const * = 0;
-        virtual auto str(std::any const &v) const -> std::string = 0;
+        virtual auto str(std::any const &v) const -> string = 0;
         virtual auto equal(std::any const &a, std::any const &b) const
             -> bool = 0;
     };
@@ -36,12 +37,12 @@ namespace ivy {
         auto operator=(datum &&other) noexcept -> datum &;
 
         auto type() const noexcept -> datum_type const *;
-        auto str() const -> std::string;
+        auto str() const -> string;
         auto equal_to(datum const &other) const -> bool;
         auto storage() const noexcept -> std::any const &;
     };
 
-    auto str(datum const &) -> std::string;
+    auto str(datum const &) -> string;
     auto operator==(datum const &a, datum const &b) -> bool;
 
     template<typename Type>

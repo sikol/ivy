@@ -39,7 +39,7 @@ auto format_value(ivy::db::value &v) -> std::string
     if (is<ivy::null_type>(d))
         return "NULL";
 
-    return str(d);
+    return ivy::transcode<std::string>(str(d)).or_throw();
 }
 
 auto print_row(ivy::db::row &row) -> void

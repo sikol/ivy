@@ -58,7 +58,7 @@ namespace ivy {
     template <character_encoding encoding, typename allocator>
     auto basic_stringchannel<encoding, allocator>::str() const -> string_type
     {
-        return string_type(&_buffer[0], &_buffer[0] + _buffer.size());
+        return string_type(_buffer.begin(), _buffer.end());
     }
 
     template <character_encoding encoding, typename allocator>

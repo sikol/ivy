@@ -207,11 +207,10 @@ namespace ivy {
                 _error_base);
         }
 
-        // Return true if the error is empty (success), false if an error
-        // condition is present.
+        // Return true if the error has a value (failure), false if okay.
         [[nodiscard]] explicit operator bool() const
         {
-            return get_if<std::monostate>(&_error_base) != nullptr;
+            return get_if<std::monostate>(&_error_base) == nullptr;
         }
 
         // Rethrow the stored error object.

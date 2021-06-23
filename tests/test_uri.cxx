@@ -6,6 +6,7 @@
 #include <catch2/catch.hpp>
 
 #include <ivy/net/uri.hxx>
+#include <ivy/string/transcode.hxx>
 
 using ivy::net::parse_uri;
 using ivy::net::uri_errors;
@@ -330,6 +331,7 @@ TEST_CASE("str(uri) 1", "[uri]")
                 "/some/path?query=value&other=value#fragment.is.here";
     auto uri = parse_uri(text);
     REQUIRE(uri);
+    INFO(ivy::transcode<std::string>(str(*uri)).or_throw());
     REQUIRE(str(*uri) == text);
 }
 
