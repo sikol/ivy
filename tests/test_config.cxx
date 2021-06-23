@@ -117,16 +117,22 @@ subitem {
     int-suboption 123;
 };
 
-subitems {
+subitems "one" {
     int-suboption 222;
 };
 
-subitems {
+subitems "two" {
     int-suboption 333;
 };
 )";
 
-    struct test_subitem {
+    struct test_anonymous_subitem {
+        int int_option = 0;
+        ivy::string string_option;
+    };
+
+    struct test_named_subitem {
+        ivy::string subitem_name;
         int int_option = 0;
         ivy::string string_option;
     };
@@ -136,20 +142,32 @@ subitems {
         std::vector<int> int_list;
         ivy::string string_option;
 
-        test_subitem subitem;
-        std::vector<test_subitem> subitems;
+        test_anonymous_subitem subitem;
+        std::vector<test_named_subitem> subitems;
     };
 
-    auto subitem_schema = ivy::config::block<test_subitem>::create().add_option(
-        U"int-suboption", &test_subitem::int_option);
+    auto anonymous_subitem_schema =
+        ivy::config::block<test_anonymous_subitem>::create() //
+            .add_option(U"int-suboption", &test_anonymous_subitem::int_option)
+            .add_option(U"string-suboption",
+                        &test_anonymous_subitem::string_option);
+
+    auto named_subitem_schema =
+        ivy::config::block<test_named_subitem>::create(
+            &test_named_subitem::subitem_name) //
+            .add_option(U"int-suboption", &test_named_subitem::int_option)
+            .add_option(U"string-suboption",
+                        &test_named_subitem::string_option);
 
     auto schema =
         ivy::config::block<test_config>::create()
             .add_option(U"string-option", &test_config::string_option)
             .add_option(U"int-option", &test_config::int_option)
             .add_option(U"int-list", &test_config::int_list)
-            .add_block(U"subitem", &test_config::subitem, subitem_schema)
-            .add_block(U"subitems", &test_config::subitems, subitem_schema);
+            .add_block(
+                U"subitem", &test_config::subitem, anonymous_subitem_schema)
+            .add_block(
+                U"subitems", &test_config::subitems, named_subitem_schema);
 
     auto c = ivy::config::parse(config_text);
     REQUIRE(c);
@@ -173,6 +191,10 @@ subitems {
     REQUIRE(conf.subitem.int_option == 123);
 
     REQUIRE(conf.subitems.size() == 2);
+
     REQUIRE(conf.subitems[0].int_option == 222);
+    REQUIRE(conf.subitems[0].subitem_name == U"one");
+
     REQUIRE(conf.subitems[1].int_option == 333);
+    REQUIRE(conf.subitems[1].subitem_name == U"two");
 }

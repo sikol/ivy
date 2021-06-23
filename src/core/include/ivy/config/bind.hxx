@@ -26,6 +26,9 @@ namespace ivy::config {
                      "BADTYPE",
                      "Option was expected to have type '{}'">;
 
+    using config_value_not_expected = ivy::
+        message<config_facility, 'E', "NOTEMPTY", "Did not expect a value">;
+
     using config_duplicate_option =
         ivy::message<config_facility,
                      'E',
@@ -108,6 +111,23 @@ namespace ivy::config {
             -> expected<void, error> = 0;
     };
 
+    template <typename block_type>
+    class empty_item_setter final : public item_setter<block_type> {
+    public:
+        empty_item_setter() = default;
+
+        auto set(block_type &block, item const &itm) const noexcept
+            -> expected<void, error> override
+        try {
+            if (itm)
+                return make_unexpected(make_error<config_value_not_expected>());
+
+            return {};
+        } catch (...) {
+            return make_unexpected(make_error(std::current_exception()));
+        }
+    };
+
     template <typename block_type,
               typename value_type,
               typename parser_type = option_parser<value_type>>
@@ -169,6 +189,7 @@ namespace ivy::config {
 
     private:
         std::map<string, option_ptr> _options;
+        std::shared_ptr<item_setter<C>> _name_setter;
 
     public:
         static auto create() -> block
@@ -176,7 +197,20 @@ namespace ivy::config {
             return block();
         }
 
+        template <typename name_type>
+        static auto create(name_type C::*name_ptr) -> block
+        {
+            auto name_setter = std::make_shared<single_item_setter<C, name_type>>(name_ptr);
+            return block(name_setter);
+        }
+
         block() = default;
+
+        block(std::shared_ptr<item_setter<C>> name_setter)
+            : _name_setter(std::move(name_setter))
+        {
+        }
+
         block(block const &) = default;
         block(block &&) = default;
 
@@ -243,6 +277,9 @@ namespace ivy::config {
         auto load(C &obj, item const &item) const noexcept
             -> expected<void, error>
         try {
+            if (_name_setter)
+                _name_setter->set(obj, item).or_throw();
+
             for (auto &&subitem : item) {
                 auto subitem_name = as_string(subitem.name());
                 if (!subitem_name)
