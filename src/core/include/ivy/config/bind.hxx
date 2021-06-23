@@ -184,20 +184,20 @@ namespace ivy::config {
     };
 
     template <typename parent_type,
-              typename child_type,
-              typename name_type,
-              typename value_type,
-              typename parser_type = option_parser<value_type>>
+              typename map_type,
+              typename parser_type =
+                  option_parser<typename map_type::mapped_type>>
     class map_block_setter final : public item_setter<parent_type> {
     private:
-        name_type child_type::*_name_ptr;
-        std::map<name_type, value_type> parent_type::*_map_ptr;
+        typename map_type::key_type map_type::mapped_type::*_name_ptr;
+        map_type parent_type::*_map_ptr;
         parser_type _parser;
 
     public:
-        map_block_setter(name_type child_type::*name_ptr,
-                         std::map<name_type, value_type> parent_type::*map_ptr,
-                         parser_type const &parser = {})
+        map_block_setter(
+            typename map_type::key_type map_type::mapped_type::*name_ptr,
+            map_type parent_type::*map_ptr,
+            parser_type const &parser = {})
             : _name_ptr(name_ptr)
             , _map_ptr(map_ptr)
             , _parser(parser)
@@ -308,19 +308,21 @@ namespace ivy::config {
             return *this;
         }
 
-        template <typename name_type, typename child_type>
-        auto add_block(string const &name,
-                       name_type child_type::*name_ptr,
-                       std::map<name_type, child_type> C::*map_ptr,
-                       block<child_type> const &child_schema) -> block &
+        template <typename map_type>
+        auto
+        add_block(string const &name,
+                  typename map_type::key_type map_type::mapped_type::*name_ptr,
+                  map_type C::*map_ptr,
+                  block<typename map_type::mapped_type> const &child_schema)
+            -> block &
         {
-            auto parser = block_parser<child_type>(child_schema);
-            auto option = map_block_setter<C,
-                                           child_type,
-                                           name_type,
-                                           child_type,
-                                           block_parser<child_type>>(
-                name_ptr, map_ptr, parser);
+            auto parser =
+                block_parser<typename map_type::mapped_type>(child_schema);
+            auto option =
+                map_block_setter<C,
+                                 map_type,
+                                 block_parser<typename map_type::mapped_type>>(
+                    name_ptr, map_ptr, parser);
             add_option(name, option);
             return *this;
         }

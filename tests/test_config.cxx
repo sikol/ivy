@@ -5,6 +5,8 @@
 
 #include <string>
 #include <string_view>
+#include <map>
+#include <unordered_map>
 
 #include <catch2/catch.hpp>
 
@@ -152,7 +154,7 @@ named-subitem "four" {
 
         test_anonymous_subitem subitem;
         std::vector<test_named_subitem> subitems;
-        std::map<ivy::string, test_named_subitem> named_subitems;
+        std::unordered_map<ivy::string, test_named_subitem> named_subitems;
     };
 
     auto anonymous_subitem_schema =
