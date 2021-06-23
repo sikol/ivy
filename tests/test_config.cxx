@@ -124,6 +124,14 @@ subitems "one" {
 subitems "two" {
     int-suboption 333;
 };
+
+named-subitem "three" {
+    int-suboption 444;
+};
+
+named-subitem "four" {
+    int-suboption 555;
+};
 )";
 
     struct test_anonymous_subitem {
@@ -144,6 +152,7 @@ subitems "two" {
 
         test_anonymous_subitem subitem;
         std::vector<test_named_subitem> subitems;
+        std::map<ivy::string, test_named_subitem> named_subitems;
     };
 
     auto anonymous_subitem_schema =
@@ -167,7 +176,11 @@ subitems "two" {
             .add_block(
                 U"subitem", &test_config::subitem, anonymous_subitem_schema)
             .add_block(
-                U"subitems", &test_config::subitems, named_subitem_schema);
+                U"subitems", &test_config::subitems, named_subitem_schema)
+            .add_block(U"named-subitem",
+                       &test_named_subitem::subitem_name,
+                       &test_config::named_subitems,
+                       named_subitem_schema);
 
     auto c = ivy::config::parse(config_text);
     REQUIRE(c);
@@ -197,4 +210,18 @@ subitems "two" {
 
     REQUIRE(conf.subitems[1].int_option == 333);
     REQUIRE(conf.subitems[1].subitem_name == U"two");
+
+    REQUIRE(conf.named_subitems.size() == 2);
+
+    {
+        auto it = conf.named_subitems.find(U"three");
+        REQUIRE(it != conf.named_subitems.end());
+        REQUIRE(it->second.int_option == 444);
+    }
+
+    {
+        auto it = conf.named_subitems.find(U"four");
+        REQUIRE(it != conf.named_subitems.end());
+        REQUIRE(it->second.int_option == 555);
+    }
 }

@@ -89,7 +89,8 @@ namespace ivy::config {
         {
         }
 
-        auto parse(item const &itm) const noexcept -> expected<child_block, error>
+        auto parse(item const &itm) const noexcept
+            -> expected<child_block, error>
         try {
             child_block child{};
             _child_schema.load(child, itm).or_throw();
@@ -182,6 +183,38 @@ namespace ivy::config {
         }
     };
 
+    template <typename parent_type,
+              typename child_type,
+              typename name_type,
+              typename value_type,
+              typename parser_type = option_parser<value_type>>
+    class map_block_setter final : public item_setter<parent_type> {
+    private:
+        name_type child_type::*_name_ptr;
+        std::map<name_type, value_type> parent_type::*_map_ptr;
+        parser_type _parser;
+
+    public:
+        map_block_setter(name_type child_type::*name_ptr,
+                         std::map<name_type, value_type> parent_type::*map_ptr,
+                         parser_type const &parser = {})
+            : _name_ptr(name_ptr)
+            , _map_ptr(map_ptr)
+            , _parser(parser)
+        {
+        }
+
+        auto set(parent_type &block, item const &itm) const noexcept
+            -> expected<void, error> override
+        try {
+            auto v = _parser.parse(itm).or_throw();
+            (block.*_map_ptr)[v.*_name_ptr] = v;
+            return {};
+        } catch (...) {
+            return make_unexpected(make_error(std::current_exception()));
+        }
+    };
+
     template <typename C>
     class block final {
     public:
@@ -200,7 +233,8 @@ namespace ivy::config {
         template <typename name_type>
         static auto create(name_type C::*name_ptr) -> block
         {
-            auto name_setter = std::make_shared<single_item_setter<C, name_type>>(name_ptr);
+            auto name_setter =
+                std::make_shared<single_item_setter<C, name_type>>(name_ptr);
             return block(name_setter);
         }
 
@@ -270,6 +304,23 @@ namespace ivy::config {
             auto option =
                 vector_item_setter<C, child_type, block_parser<child_type>>(
                     value_ptr, parser);
+            add_option(name, option);
+            return *this;
+        }
+
+        template <typename name_type, typename child_type>
+        auto add_block(string const &name,
+                       name_type child_type::*name_ptr,
+                       std::map<name_type, child_type> C::*map_ptr,
+                       block<child_type> const &child_schema) -> block &
+        {
+            auto parser = block_parser<child_type>(child_schema);
+            auto option = map_block_setter<C,
+                                           child_type,
+                                           name_type,
+                                           child_type,
+                                           block_parser<child_type>>(
+                name_ptr, map_ptr, parser);
             add_option(name, option);
             return *this;
         }
